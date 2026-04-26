@@ -3,119 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enterprise Presence System X TKJ 2</title>
+    <title>Sistem Presensi Pro X TKJ 2</title>
     <script src="https://cdn.tailwindcss.com/3.4.1"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-        .active-tab { border-bottom: 4px solid #0d9488; color: #0d9488; }
-        .status-h { background: #dcfce7; color: #166534; }
-        .status-i { background: #fef9c3; color: #854d0e; }
-        .status-s { background: #dbeafe; color: #1e40af; }
-        .status-a { background: #fee2e2; color: #991b1b; }
+        .active-tab { border-bottom: 4px solid #0f172a; color: #0f172a; }
+        .status-h { background: #10b981; color: white; border-color: #059669; }
+        .status-i { background: #f59e0b; color: white; border-color: #d97706; }
+        .status-s { background: #3b82f6; color: white; border-color: #2563eb; }
+        .status-a { background: #ef4444; color: white; border-color: #dc2626; }
+        .btn-off { background: white; color: #64748b; border: 1px solid #e2e8f0; }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen">
+<body class="bg-[#f8fafc] min-h-screen">
 
-    <nav class="bg-slate-900 text-white p-4 sticky top-0 z-50 shadow-xl">
+    <nav class="bg-[#0f172a] text-white p-5 sticky top-0 z-50 shadow-lg">
         <div class="max-w-6xl mx-auto flex justify-between items-center">
             <div>
-                <h1 class="font-800 text-xl tracking-tight">PRESENSI X TKJ 2</h1>
-                <p class="text-xs text-teal-400 font-600">SMK YADIKA 13 - KELOMPOK DIGITAL</p>
+                <h1 class="font-800 text-xl tracking-tight">X TKJ 2 PRESENSI</h1>
+                <p class="text-[10px] text-slate-400 font-bold tracking-widest uppercase">SMK YADIKA 13</p>
             </div>
-            <div class="text-right hidden sm:block">
-                <p class="text-[10px] uppercase font-bold text-slate-400">Wali Kelas</p>
-                <p class="text-xs font-bold">Engglin Angela T. H., S. Kom</p>
+            <div class="text-right">
+                <p class="text-[10px] text-slate-400 uppercase font-bold">Wali Kelas</p>
+                <p class="text-xs font-semibold">Engglin Angela T. H., S. Kom</p>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-6xl mx-auto p-4 sm:p-6">
+    <main class="max-w-6xl mx-auto p-4 md:p-8">
         
-        <div class="flex gap-4 mb-6 border-b border-slate-300 overflow-x-auto">
-            <button onclick="switchTab('input')" id="btn-input" class="pb-3 px-4 font-bold text-sm active-tab transition-all">📥 Input Harian</button>
-            <button onclick="switchTab('rekap')" id="btn-rekap" class="pb-3 px-4 font-bold text-sm text-slate-500 transition-all">📊 Rekap & Persentase</button>
-            <button onclick="switchTab('analitik')" id="btn-analitik" class="pb-3 px-4 font-bold text-sm text-slate-500 transition-all">📈 Grafik Tren</button>
+        <div class="flex gap-8 mb-8 border-b border-slate-200 overflow-x-auto">
+            <button onclick="switchTab('input')" id="btn-input" class="pb-4 px-2 font-bold text-sm active-tab transition-all">INPUT HARIAN</button>
+            <button onclick="switchTab('rekap')" id="btn-rekap" class="pb-4 px-2 font-bold text-sm text-slate-400 transition-all">REKAP & PERSENTASE</button>
+            <button onclick="switchTab('analitik')" id="btn-analitik" class="pb-4 px-2 font-bold text-sm text-slate-400 transition-all">ANALITIK</button>
         </div>
 
         <section id="tab-input" class="space-y-6">
-            <div class="flex flex-wrap gap-4 items-end justify-between bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                <div class="flex-1 min-w-[200px]">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase">Pilih Tanggal Absensi</label>
-                    <input type="date" id="dateSelect" class="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg font-bold">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap gap-4 items-end justify-between">
+                <div class="w-full md:w-64">
+                    <label class="text-[10px] font-800 text-slate-400 uppercase mb-2 block">Tanggal Absensi</label>
+                    <input type="date" id="dateSelect" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:border-slate-400 transition">
                 </div>
-                <div class="flex gap-2">
-                    <button onclick="markAll('H')" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition">Hadir Semua</button>
-                    <button onclick="saveData()" class="px-6 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-black transition shadow-lg">💾 Simpan Permanen</button>
+                <div class="flex gap-3 w-full md:w-auto">
+                    <button onclick="markAll('H')" class="flex-1 md:flex-none px-6 py-3 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-800 hover:bg-emerald-100 transition">HADIR SEMUA</button>
+                    <button onclick="saveData()" class="flex-1 md:flex-none px-8 py-3 bg-[#0f172a] text-white rounded-xl text-xs font-800 hover:bg-black transition shadow-lg shadow-slate-200">SIMPAN DATA</button>
                 </div>
             </div>
 
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <table class="w-full text-left">
-                    <thead class="bg-slate-50 border-b border-slate-200">
+                    <thead class="bg-slate-50/50 border-b border-slate-100">
                         <tr>
-                            <th class="p-4 text-xs font-800 text-slate-500 uppercase">Nama Siswa</th>
-                            <th class="p-4 text-xs font-800 text-slate-500 uppercase text-center">Status Kehadiran</th>
+                            <th class="p-5 text-[10px] font-800 text-slate-400 uppercase">Nama Siswa</th>
+                            <th class="p-5 text-[10px] font-800 text-slate-400 uppercase text-center">Status</th>
                         </tr>
                     </thead>
-                    <tbody id="studentList" class="divide-y divide-slate-100"></tbody>
+                    <tbody id="studentList" class="divide-y divide-slate-50"></tbody>
                 </table>
             </div>
         </section>
 
         <section id="tab-rekap" class="hidden space-y-6">
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div class="bg-white p-4 rounded-2xl border-l-4 border-emerald-500 shadow-sm">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase">Total Hadir</p>
-                    <p id="stat-h" class="text-2xl font-800">0</p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <p class="text-[10px] font-800 text-slate-400 uppercase">Total Kehadiran</p>
+                    <p id="stat-h" class="text-3xl font-800 text-emerald-500">0</p>
                 </div>
-                <div class="bg-white p-4 rounded-2xl border-l-4 border-amber-500 shadow-sm">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase">Total Izin/Sakit</p>
-                    <p id="stat-is" class="text-2xl font-800">0</p>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <p class="text-[10px] font-800 text-slate-400 uppercase">Total Izin/Sakit</p>
+                    <p id="stat-is" class="text-3xl font-800 text-blue-500">0</p>
                 </div>
-                <div class="bg-white p-4 rounded-2xl border-l-4 border-red-500 shadow-sm">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase">Total Alpha</p>
-                    <p id="stat-a" class="text-2xl font-800">0</p>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <p class="text-[10px] font-800 text-slate-400 uppercase">Total Alpha</p>
+                    <p id="stat-a" class="text-3xl font-800 text-red-500">0</p>
                 </div>
-                <div class="bg-white p-4 rounded-2xl border-l-4 border-blue-500 shadow-sm">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase">Rasio Kehadiran</p>
-                    <p id="stat-pct" class="text-2xl font-800 text-blue-600">0%</p>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <p class="text-[10px] font-800 text-slate-400 uppercase">Efektivitas Kelas</p>
+                    <p id="stat-pct" class="text-3xl font-800 text-slate-800">0%</p>
                 </div>
             </div>
 
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-800 text-slate-800">Akumulasi Bulanan Siswa</h3>
-                    <button onclick="downloadExcel()" class="text-xs font-bold text-emerald-600 border border-emerald-600 px-3 py-1 rounded-md hover:bg-emerald-50">📥 Export Excel</button>
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="font-800 text-slate-800 uppercase text-sm tracking-wider">Laporan Akumulasi</h3>
+                    <button onclick="downloadExcel()" class="bg-emerald-600 text-white px-5 py-2 rounded-lg text-xs font-800 hover:bg-emerald-700 transition flex items-center gap-2">
+                        EXPORT EXCEL (FORMAT SEKOLAH)
+                    </button>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
+                    <table class="w-full text-xs">
                         <thead>
-                            <tr class="text-left text-slate-400 font-bold border-b">
-                                <td class="pb-2">Nama</td>
-                                <td class="pb-2">H</td><td class="pb-2">I</td><td class="pb-2">S</td><td class="pb-2">A</td>
-                                <td class="pb-2">Persentase</td>
+                            <tr class="text-left text-slate-400 font-800 uppercase border-b border-slate-100">
+                                <td class="pb-4">Nama Siswa</td>
+                                <td class="pb-4 text-center">H</td>
+                                <td class="pb-4 text-center">I</td>
+                                <td class="pb-4 text-center">S</td>
+                                <td class="pb-4 text-center">A</td>
+                                <td class="pb-4 text-right">Persentase</td>
                             </tr>
                         </thead>
-                        <tbody id="rekapList" class="divide-y divide-slate-100"></tbody>
+                        <tbody id="rekapList" class="divide-y divide-slate-50"></tbody>
                     </table>
                 </div>
             </div>
         </section>
 
-        <section id="tab-analitik" class="hidden">
-            <div class="grid sm:grid-cols-2 gap-6">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <h3 class="font-800 mb-4">Komposisi Harian</h3>
-                    <canvas id="chartDoughnut"></canvas>
-                </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <h3 class="font-800 mb-4">Tren Kehadiran (7 Hari Terakhir)</h3>
-                    <canvas id="chartLine"></canvas>
-                </div>
+        <section id="tab-analitik" class="hidden grid md:grid-cols-2 gap-8">
+            <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+                <h3 class="font-800 text-slate-800 mb-6 uppercase text-xs">Komposisi Status</h3>
+                <canvas id="chartDoughnut"></canvas>
+            </div>
+            <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+                <h3 class="font-800 text-slate-800 mb-6 uppercase text-xs">Tren Kehadiran (7 Hari)</h3>
+                <canvas id="chartLine"></canvas>
             </div>
         </section>
 
@@ -124,14 +127,14 @@
     <script>
         const siswa = ["Adrian Wansman Sugi", "Afriyani Sholeha", "Alberto Bryan", "Azan Azhar M.", "Azria Nurfadilla", "Banu Arkana Mibras H.", "Bintang Hafizh Khadaffi", "Cakra Prayata N.", "Dava Trian Putra", "Eriel Riva Fahreza", "Fadly Irsyad Febrian", "Fahrido Hidayat", "Gilang Ardian Pratama", "Hafidz Ridho Nur Fadilla", "Hafizah Nur Afrilyani", "Haikal Putra Lesmana", "Harits Shilah Al'adhawi", "Izyan Ghaisani Prasetyo", "M. Syehan Sidik Latuconsina", "Maira Luna Hastari", "Malik Ahmad Al Ghazi S.", "Marcellinus Nathan Doni K.", "Mochamad Eryan Ferully", "Moh. Zidha Aminnulloh", "Muchamad Iqbal Kurniadi", "Muhammad Baihaqi A.", "Muhammad Al-Fiansyakh", "Muhammad Raihan Febriano", "Muhammad Reza Pratama", "Putri Indah Lestari", "Regita Irzaprilya Arbadya F.", "Reno Setiawan", "Samuel Cristian Sulayman", "Umar Rafa Setiawan", "Zaskia Salsabila", "Zidan Alkaisar", "Ziyan Rashif Priyandaru", "M. Kafi Rasydan"];
 
-        let db = JSON.parse(localStorage.getItem('absensi_v5_db')) || {};
+        let db = JSON.parse(localStorage.getItem('absensi_final_tkj2')) || {};
         document.getElementById('dateSelect').valueAsDate = new Date();
 
         function switchTab(target) {
             ['input', 'rekap', 'analitik'].forEach(t => {
                 document.getElementById('tab-'+t).classList.add('hidden');
                 document.getElementById('btn-'+t).classList.remove('active-tab');
-                document.getElementById('btn-'+t).classList.add('text-slate-500');
+                document.getElementById('btn-'+t).classList.add('text-slate-400');
             });
             document.getElementById('tab-'+target).classList.remove('hidden');
             document.getElementById('btn-'+target).classList.add('active-tab');
@@ -142,13 +145,13 @@
         function renderInput() {
             const container = document.getElementById('studentList');
             container.innerHTML = siswa.map(name => `
-                <tr class="hover:bg-slate-50">
-                    <td class="p-4 font-bold text-slate-700 text-sm">${name}</td>
-                    <td class="p-4 flex justify-center gap-2">
-                        ${['H', 'I', 'S', 'A'].map(status => `
-                            <button onclick="setTemp('${name}', '${status}')" id="btn-${name}-${status}" 
-                                class="w-8 h-8 rounded-full border border-slate-200 font-bold text-[10px] hover:border-slate-400 transition status-off">
-                                ${status}
+                <tr class="hover:bg-slate-50/50 transition">
+                    <td class="p-5 font-semibold text-slate-700 text-sm">${name}</td>
+                    <td class="p-5 flex justify-center gap-3">
+                        ${['H', 'I', 'S', 'A'].map(st => `
+                            <button onclick="setTemp('${name}', '${st}')" id="btn-${name}-${st}" 
+                                class="w-9 h-9 rounded-xl font-800 text-[11px] transition-all btn-off">
+                                ${st}
                             </button>
                         `).join('')}
                     </td>
@@ -159,89 +162,118 @@
         let tempInput = {};
         function setTemp(name, status) {
             ['H', 'I', 'S', 'A'].forEach(s => {
-                document.getElementById(`btn-${name}-${s}`).className = 'w-8 h-8 rounded-full border border-slate-200 font-bold text-[10px] status-off';
+                document.getElementById(`btn-${name}-${s}`).className = 'w-9 h-9 rounded-xl font-800 text-[11px] transition-all btn-off';
             });
-            document.getElementById(`btn-${name}-${status}`).className = `w-8 h-8 rounded-full font-bold text-[10px] status-${status.toLowerCase()} shadow-lg scale-110`;
+            document.getElementById(`btn-${name}-${status}`).className = `w-9 h-9 rounded-xl font-800 text-[11px] transition-all status-${status.toLowerCase()} shadow-lg scale-110`;
             tempInput[name] = status;
         }
 
-        function markAll(status) {
-            siswa.forEach(name => setTemp(name, status));
-        }
+        function markAll(status) { siswa.forEach(name => setTemp(name, status)); }
 
         function saveData() {
             const date = document.getElementById('dateSelect').value;
             siswa.forEach(n => { if(!tempInput[n]) tempInput[n] = 'H'; });
             db[date] = {...tempInput};
-            localStorage.setItem('absensi_v5_db', JSON.stringify(db));
-            alert('Data Tanggal ' + date + ' Tersimpan!');
+            localStorage.setItem('absensi_final_tkj2', JSON.stringify(db));
+            alert('Data Presensi Berhasil Disimpan!');
         }
 
         function updateRekap() {
             const container = document.getElementById('rekapList');
-            let globalStats = {H:0, I:0, S:0, A:0};
-            const totalDays = Object.keys(db).length;
+            let global = {H:0, I:0, S:0, A:0};
+            const days = Object.keys(db).length;
 
             container.innerHTML = siswa.map(name => {
                 let s = {H:0, I:0, S:0, A:0};
-                Object.values(db).forEach(day => { if(day[name]) s[day[name]]++; globalStats[day[name]]++; });
-                let pct = totalDays > 0 ? ((s.H / totalDays) * 100).toFixed(1) : 0;
+                Object.values(db).forEach(day => { if(day[name]) s[day[name]]++; global[day[name]]++; });
+                let pct = days > 0 ? ((s.H / days) * 100).toFixed(1) : 0;
                 
                 return `<tr>
-                    <td class="py-3 font-bold">${name}</td>
-                    <td>${s.H}</td><td>${s.I}</td><td>${s.S}</td><td class="text-red-500 font-bold">${s.A}</td>
-                    <td><span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-[10px] font-bold">${pct}%</span></td>
+                    <td class="py-4 font-semibold text-slate-700">${name}</td>
+                    <td class="text-center font-bold text-emerald-600">${s.H}</td>
+                    <td class="text-center font-bold text-blue-500">${s.I}</td>
+                    <td class="text-center font-bold text-amber-500">${s.S}</td>
+                    <td class="text-center font-bold text-red-500">${s.A}</td>
+                    <td class="text-right"><span class="bg-slate-100 px-3 py-1 rounded-full font-800 text-slate-600">${pct}%</span></td>
                 </tr>`;
             }).join('');
 
-            document.getElementById('stat-h').innerText = globalStats.H;
-            document.getElementById('stat-is').innerText = globalStats.I + globalStats.S;
-            document.getElementById('stat-a').innerText = globalStats.A;
-            document.getElementById('stat-pct').innerText = totalDays > 0 ? ((globalStats.H / (siswa.length * totalDays)) * 100).toFixed(1) + '%' : '0%';
-        }
-
-        let dChart, lChart;
-        function updateCharts() {
-            const dates = Object.keys(db).sort().slice(-7);
-            const dataH = dates.map(d => Object.values(db[d]).filter(v => v === 'H').length);
-
-            if(dChart) dChart.destroy();
-            dChart = new Chart(document.getElementById('chartDoughnut'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Hadir', 'Izin', 'Sakit', 'Alpha'],
-                    datasets: [{
-                        data: [
-                            parseInt(document.getElementById('stat-h').innerText),
-                            parseInt(document.getElementById('stat-is').innerText),
-                            0, // Sakit (bisa dipisah di rekap jika mau)
-                            parseInt(document.getElementById('stat-a').innerText)
-                        ],
-                        backgroundColor: ['#10b981', '#f59e0b', '#3b82f6', '#ef4444']
-                    }]
-                }
-            });
-
-            if(lChart) lChart.destroy();
-            lChart = new Chart(document.getElementById('chartLine'), {
-                type: 'line',
-                data: {
-                    labels: dates,
-                    datasets: [{ label: 'Jumlah Siswa Hadir', data: dataH, borderColor: '#0d9488', tension: 0.3, fill: true, backgroundColor: 'rgba(13, 148, 136, 0.1)' }]
-                }
-            });
+            document.getElementById('stat-h').innerText = global.H;
+            document.getElementById('stat-is').innerText = global.I + global.S;
+            document.getElementById('stat-a').innerText = global.A;
+            document.getElementById('stat-pct').innerText = days > 0 ? ((global.H / (siswa.length * days)) * 100).toFixed(1) + '%' : '0%';
         }
 
         function downloadExcel() {
-            const rows = siswa.map(name => {
-                let s = {H:0, I:0, S:0, A:0};
-                Object.values(db).forEach(day => { if(day[name]) s[day[name]]++; });
-                return { Nama: name, Hadir: s.H, Izin: s.I, Sakit: s.S, Alpha: s.A, Persentase: ((s.H/Object.keys(db).length)*100).toFixed(1)+'%' };
+            const date = new Date(document.getElementById('dateSelect').value);
+            const year = date.getFullYear();
+            const month = date.getMonth();
+            const lastDay = new Date(year, month + 1, 0).getDate();
+            const monthName = date.toLocaleString('id-ID', { month: 'long' }).toUpperCase();
+
+            // Structure exactly like the CSV user provided
+            const rows = [
+                [`DAFTAR HADIR SISWA KELAS X TKJ-2`, "", "", ""],
+                [`TAHUN AJARAN 2025/2026`, "", "", ""],
+                [], // Empty row
+                ["NO", "NAMA", `BULAN ${monthName} ${year}`, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "KETERANGAN & JUMLAH", "", ""],
+            ];
+
+            // Sub-header for days 1-30/31
+            const subHeader = ["", ""];
+            for(let d=1; d<=lastDay; d++) subHeader.push(d);
+            subHeader.push("S", "I", "D", "A");
+            rows.push(subHeader);
+
+            siswa.forEach((name, idx) => {
+                let row = [idx + 1, name];
+                let s=0, i=0, d=0, a=0;
+
+                for(let d=1; d<=lastDay; d++) {
+                    const dStr = `${year}-${String(month+1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    const status = (db[dStr] && db[dStr][name]) ? db[dStr][name] : "";
+                    
+                    // Show only non-Hadir statuses in the grid
+                    row.push(status === "H" ? "" : status);
+                    if(status === "S") s++;
+                    if(status === "I") i++;
+                    if(status === "A") a++;
+                }
+                row.push(s, i, d, a);
+                rows.push(row);
             });
-            const ws = XLSX.utils.json_to_sheet(rows);
+
+            const ws = XLSX.utils.aoa_to_sheet(rows);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Rekap_TKJ2");
-            XLSX.writeFile(wb, "Rekap_Absensi_TKJ2_Final.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "Rekap_Absensi");
+            XLSX.writeFile(wb, `Absensi_X_TKJ2_${monthName}.xlsx`);
+        }
+
+        let chartD, chartL;
+        function updateCharts() {
+            const days = Object.keys(db).sort().slice(-7);
+            const hData = days.map(d => Object.values(db[d]).filter(v => v === 'H').length);
+
+            if(chartD) chartD.destroy();
+            chartD = new Chart(document.getElementById('chartDoughnut'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Hadir', 'Izin', 'Sakit', 'Alpha'],
+                    datasets: [{ data: [
+                        parseInt(document.getElementById('stat-h').innerText),
+                        0, // Izin/Sakit dipisah di data tapi digabung di stat atas
+                        parseInt(document.getElementById('stat-is').innerText),
+                        parseInt(document.getElementById('stat-a').innerText)
+                    ], backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'] }]
+                },
+                options: { cutout: '70%' }
+            });
+
+            if(chartL) chartL.destroy();
+            chartL = new Chart(document.getElementById('chartLine'), {
+                type: 'line',
+                data: { labels: days, datasets: [{ label: 'Siswa Hadir', data: hData, borderColor: '#0f172a', tension: 0.4, fill: true, backgroundColor: 'rgba(15, 23, 42, 0.05)' }] }
+            });
         }
 
         renderInput();
