@@ -3,167 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Premium Absensi X TKJ 2</title>
+    <title>X TKJ 2 - Digital Presence System</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #6366f1;
-            --accent: #f43f5e;
-            --bg: #030712;
-            --glass: rgba(17, 24, 39, 0.7);
+            --accent: #a855f7;
+            --bg: #020617;
+            --glass: rgba(15, 23, 42, 0.6);
             --border: rgba(255, 255, 255, 0.1);
         }
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background: radial-gradient(circle at 0% 0%, #1e1b4b 0%, #030712 100%);
+            background: radial-gradient(circle at top right, #1e1b4b, #020617);
             color: #f8fafc;
             margin: 0;
             padding: 20px;
-            min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        .container { max-width: 1200px; margin: 0 auto; animation: fadeIn 0.8s ease-out; }
+        .container { max-width: 1200px; margin: 0 auto; animation: slideUp 0.8s ease-out; }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
         header {
             text-align: center;
-            padding: 40px;
+            padding: 50px 20px;
             background: var(--glass);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
+            backdrop-filter: blur(25px);
+            border-radius: 30px;
             border: 1px solid var(--border);
-            margin-bottom: 30px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            margin-bottom: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
 
         h1 { 
-            font-size: 3rem; 
+            font-size: 3.5rem; 
             font-weight: 800; 
             margin: 0;
-            background: linear-gradient(to right, #818cf8, #c084fc, #fb7185);
+            background: linear-gradient(to right, #818cf8, #c084fc);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            letter-spacing: -1px;
+            letter-spacing: -2px;
         }
 
-        .action-grid {
+        .wali-kelas { color: #94a3b8; font-size: 1.1rem; margin-top: 10px; font-weight: 500; }
+
+        .btn-group {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
 
         .btn {
-            padding: 14px;
-            border-radius: 16px;
+            padding: 16px;
+            border-radius: 18px;
             border: 1px solid var(--border);
             cursor: pointer;
             font-weight: 700;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
+            color: white;
             text-transform: uppercase;
-            font-size: 0.8rem;
-            letter-spacing: 1px;
+            font-size: 0.85rem;
         }
 
-        .btn-export { background: #059669; color: white; }
-        .btn-update { background: var(--primary); color: white; }
-        .btn-import { background: #4b5563; color: white; }
-        .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.5); }
+        .btn-excel { background: linear-gradient(45deg, #059669, #10b981); }
+        .btn-sync { background: linear-gradient(45deg, #4f46e5, #7c3aed); }
+        .btn:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 15px 30px rgba(99, 102, 241, 0.4); }
 
-        .table-wrapper {
+        .glass-card {
             background: var(--glass);
             backdrop-filter: blur(20px);
-            border-radius: 24px;
+            border-radius: 28px;
             border: 1px solid var(--border);
-            padding: 10px;
-            overflow: hidden;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
         table { width: 100%; border-collapse: collapse; }
-        th { padding: 20px; text-align: left; color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid var(--border); }
-        td { padding: 16px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
-        tr:hover { background: rgba(255, 255, 255, 0.02); }
+        th { padding: 25px; text-align: left; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; }
+        td { padding: 18px 25px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
+        tr:hover { background: rgba(255, 255, 255, 0.03); border-radius: 15px; }
 
-        .student-name { font-weight: 600; color: #e2e8f0; }
-        .status-pill {
-            background: #1f2937;
-            color: #fff;
-            border: 1px solid #374151;
-            padding: 8px;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: 0.2s;
+        .avatar {
+            width: 55px; height: 55px; border-radius: 16px;
+            background: linear-gradient(45deg, #1e293b, #0f172a);
+            border: 2px solid var(--primary);
+            object-fit: cover;
         }
 
-        .avatar-box {
-            width: 50px;
-            height: 50px;
-            border-radius: 14px;
-            background: linear-gradient(45deg, #374151, #111827);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            border: 2px solid var(--border);
+        .student-info div { font-weight: 700; color: #f1f5f9; font-size: 1rem; }
+
+        select {
+            background: #111827; color: white; border: 1px solid #374151;
+            padding: 10px; border-radius: 12px; cursor: pointer; font-weight: 600;
         }
 
-        .avatar-box img { width: 100%; height: 100%; object-fit: cover; }
-
-        .chart-grid {
+        .charts-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 25px;
-            margin-top: 40px;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
         }
 
-        .card {
-            background: var(--glass);
-            padding: 30px;
-            border-radius: 24px;
-            border: 1px solid var(--border);
-        }
+        .chart-card { background: var(--glass); padding: 35px; border-radius: 30px; border: 1px solid var(--border); }
 
-        .photo-trigger {
-            background: rgba(255,255,255,0.05);
-            border: 1px dashed rgba(255,255,255,0.2);
-            color: #94a3b8;
-            padding: 5px 10px;
-            border-radius: 8px;
-            font-size: 0.7rem;
-            cursor: pointer;
+        .btn-photo {
+            background: rgba(255,255,255,0.05); color: #94a3b8;
+            border: 1px dashed #475569; padding: 8px 15px; border-radius: 10px;
+            font-size: 0.7rem; cursor: pointer; transition: 0.3s;
         }
+        .btn-photo:hover { border-color: var(--primary); color: white; background: rgba(99, 102, 241, 0.1); }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header>
-        <h1>X TKJ 2 DASHBOARD</h1>
-        <p style="color: #94a3b8; margin-top: 10px; font-weight: 500;">WALI KELAS: <span style="color: #c084fc;">ENGGLIN ANGELA THERESIA HUMBAS, S. KOM</span></p>
+        <h1>DASHBOARD X TKJ 2</h1>
+        <div class="wali-kelas">Wali Kelas: Engglin Angela Theresia Humbas, S. Kom</div>
     </header>
 
-    <div class="action-grid">
-        <button onclick="exportToExcel()" class="btn btn-export">🚀 Export Spreadsheet</button>
-        <label for="importExcel" class="btn btn-import">📁 Import Excel</label>
+    <div class="btn-group">
+        <button onclick="exportToExcel()" class="btn btn-excel">📥 Export Spreadsheet</button>
+        <label for="importExcel" class="btn" style="background:#334155; cursor:pointer">📤 Import Excel</label>
         <input type="file" id="importExcel" hidden accept=".xlsx, .xls">
-        <button onclick="updateCharts()" class="btn btn-update">📊 Sinkronisasi Data</button>
+        <button onclick="updateCharts()" class="btn btn-sync">⚡ Sinkronisasi Analitik</button>
     </div>
 
-    <div class="table-wrapper">
+    <div class="glass-card" style="overflow-x: auto;">
         <table>
             <thead>
                 <tr>
                     <th>Profil</th>
-                    <th>Nama Lengkap</th>
+                    <th>Identitas Siswa</th>
                     <th>Senin</th><th>Selasa</th><th>Rabu</th><th>Kamis</th><th>Jumat</th>
                     <th>Aksi</th>
                 </tr>
@@ -172,29 +153,29 @@
         </table>
     </div>
 
-    <div class="chart-grid">
-        <div class="card">
-            <h3 style="margin-bottom: 20px;">Kehadiran Harian (Siswa)</h3>
+    <div class="charts-container">
+        <div class="chart-card">
+            <h3 style="text-align:center; color: var(--primary);">Visualisasi Kehadiran Mingguan</h3>
             <canvas id="weeklyChart"></canvas>
         </div>
-        <div class="card">
-            <h3 style="margin-bottom: 20px;">Analisis Persentase (%)</h3>
+        <div class="chart-card">
+            <h3 style="text-align:center; color: var(--accent);">Rasio Partisipasi Kelas</h3>
             <canvas id="pieChart"></canvas>
         </div>
     </div>
 </div>
 
 <script>
-    const students = ["Adrian Wansman Sugi", "Afriyani Sholeha", "Alberto Bryan", "Azan Azhar M.", "Azria Nurfadilla", "Banu Arkana Mibras H.", "Bintang Hafizh Khadaffi", "Cakra Prayata N.", "Dava Trian Putra", "Eriel Riva Fahreza", "Fadly Irsyad Febrian", "Fahrido Hidayat", "Gilang Ardian Pratama", "Hafidz Ridho Nur Fadilla", "Hafizah Nur Afrilyani", "Haikal Putra Lesmana", "Harits Shilah Al'adhawi", "Izyan Ghaisani Prasetyo", "M. Syehan Sidik Latuconsina", "Maira Luna Hastari", "Malik Ahmad Al Ghazi S.", "Marcellinus Nathan Doni K.", "Mochamad Eryan Ferully", "Moh. Zidha Aminnulloh", "Muchamad Iqbal Kurniadi", "Muhammad Baihaqi A.", "Muhammad Al-Fiansyakh", "Muhammad Raihan Febriano", "Muhammad Reza Pratama", "Putri Indah Lestari", "Regita Irzaprilya Arbadya F.", "Reno Setiawan", "Samuel Cristian Sulayman", "Umar Rafa Setiawan", "Zaskia Salsabila", "Zidan Alkaisar", "Ziyan Rashif Priyandaru", "M. Kafi Rasydan"];
-    
-    const tableBody = document.getElementById('studentTable');
+    const students = ["Adrian Wansman Sugi", "Afriyani Sholeha", "Alberto Bryan", "Azan Azhar M.", "Azria Nurfadilla", "Banu Arkana Mibras H.", "Bintang Hafizh Khadaffi", "Cakra Prayata N.", "Dava Trian Putra", "Eriel Riva Fahreza", "Fadly Irsyad Febrian", "Fahrido Hidayat", "Gilang Ardian Pratama", "Hafidz Ridho Nur Fadilla", "Hafizah Nur Afrilyani", "Haikal Putra Lesmana", "Harits Shilah Al'adhawi", "Izyan Ghaisani Prasetyo", "M. Syehan Sidik Latuconsina", "Maira Luna Hastari", "Malik Ahmad Al Ghazi S.", "Marcellinus Nathan Doni K.", "Mochamad Eryan Ferully", "Moh. Zidha Aminnulloh", "Muchamad Iqbal Kurniadi", "Muhammad Baihaqi A.", "Muhammad Al-Fiansyakh", "Muhammad Raihan Febriano", "Muhammad Reza Pratama", "Putri Intah Lestari", "Regita Irzaprilya Arbadya F.", "Reno Setiawan", "Samuel Cristian Sulayman", "Umar Rafa Setiawan", "Zaskia Salsabila", "Zidan Alkaisar", "Ziyan Rashif Priyandaru", "M. Kafi Rasydan"];
+
+    const tbody = document.getElementById('studentTable');
     students.forEach((name, i) => {
-        tableBody.innerHTML += `
+        tbody.innerHTML += `
             <tr>
-                <td><div class="avatar-box"><img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${name}" id="img-${i}"></div></td>
-                <td><div class="student-name">${name}</div></td>
+                <td><img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${name}" class="avatar" id="img-${i}"></td>
+                <td class="student-info"><div>${name}</div><small style="color:#64748b">ID: 2026-TKJ2-${i+1}</small></td>
                 ${['Senin','Selasa','Rabu','Kamis','Jumat'].map(d => `<td>
-                    <select class="status-pill" data-day="${d}">
+                    <select class="status-sel" data-day="${d}">
                         <option value="H">HADIR</option>
                         <option value="I">IZIN</option>
                         <option value="S">SAKIT</option>
@@ -202,14 +183,14 @@
                     </select>
                 </td>`).join('')}
                 <td>
-                    <input type="file" id="file-${i}" hidden onchange="preview(${i}, event)">
-                    <button class="photo-trigger" onclick="document.getElementById('file-${i}').click()">GANTI FOTO</button>
+                    <input type="file" id="f-${i}" hidden onchange="pv(${i}, event)">
+                    <button class="btn-photo" onclick="document.getElementById('f-${i}').click()">FOTO</button>
                 </td>
             </tr>
         `;
     });
 
-    function preview(i, e) {
+    function pv(i, e) {
         const r = new FileReader();
         r.onload = () => document.getElementById(`img-${i}`).src = r.result;
         r.readAsDataURL(e.target.files[0]);
@@ -217,3 +198,27 @@
 
     let wc, pc;
     function updateCharts() {
+        const s = document.querySelectorAll('.status-sel');
+        let dStats = {Senin:0, Selasa:0, Rabu:0, Kamis:0, Jumat:0}, h=0, th=0;
+        s.forEach(sel => { if(sel.value==='H') { dStats[sel.dataset.day]++; h++; } else th++; });
+
+        if(wc) wc.destroy();
+        wc = new Chart(document.getElementById('weeklyChart'), {
+            type: 'bar',
+            data: { labels: Object.keys(dStats), datasets: [{ label: 'Kehadiran', data: Object.values(dStats), backgroundColor: '#818cf8', borderRadius: 12 }] },
+            options: { plugins: { legend: { display: false } }, scales: { y: { grid: { display: false }, ticks: { color: '#64748b' } }, x: { ticks: { color: '#64748b' } } } }
+        });
+
+        if(pc) pc.destroy();
+        pc = new Chart(document.getElementById('pieChart'), {
+            type: 'doughnut',
+            data: { labels: ['Hadir', 'Absen'], datasets: [{ data: [h, th], backgroundColor: ['#10b981', '#f43f5e'], borderWidth: 0 }] },
+            options: { cutout: '80%', plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 14 } } } } }
+        });
+    }
+
+    function exportToExcel() { XLSX.writeFile(XLSX.utils.table_to_book(document.querySelector("table")), "REKAP_PRESENSI_TKJ2.xlsx"); }
+    updateCharts();
+</script>
+</body>
+</html>
