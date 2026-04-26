@@ -3,170 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Absensi Terpadu X TKJ 2</title>
+    <title>Sistem Manajemen Presensi X TKJ 2</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --p: #6366f1; --a: #a855f7; --bg: #020617; --g: rgba(15, 23, 42, 0.7); }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: radial-gradient(circle at top right, #1e1b4b, #020617); color: #f8fafc; margin: 0; padding: 20px; }
-        .container { max-width: 1300px; margin: 0 auto; animation: fadeIn 0.5s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        :root {
+            --bg: #f8fafc; --sidebar: #1e293b; --text-main: #0f172a;
+            --primary: #2563eb; --success: #059669; --danger: #dc2626; --warning: #d97706;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; display: flex; min-height: 100vh; }
         
-        header { text-align: center; padding: 40px; background: var(--g); backdrop-filter: blur(20px); border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 30px; }
-        h1 { font-size: 2.5rem; margin: 0; background: linear-gradient(to right, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-        .control-panel { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .card { background: var(--g); padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .main-content { flex: 1; padding: 40px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; }
         
-        input[type="date"], select { background: #111827; color: white; border: 1px solid #374151; padding: 12px; border-radius: 12px; width: 100%; box-sizing: border-box; }
+        .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; }
         
-        .btn { padding: 12px; border-radius: 12px; border: none; cursor: pointer; font-weight: 700; transition: 0.3s; color: white; width: 100%; margin-top: 10px; }
-        .btn-save { background: var(--p); }
-        .btn-excel { background: #059669; }
-        .btn:hover { opacity: 0.8; transform: translateY(-2px); }
-
-        .table-container { background: var(--g); border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); overflow: auto; max-height: 500px; }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        th { position: sticky; top: 0; background: #1e293b; padding: 15px; text-align: left; font-size: 0.8rem; letter-spacing: 1px; z-index: 10; }
-        td { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-
-        .rekap-badge { padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; }
-        .h { background: #064e3b; color: #34d399; }
-        .i { background: #1e3a8a; color: #60a5fa; }
-        .s { background: #78350f; color: #fbbf24; }
-        .a { background: #7f1d1d; color: #f87171; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #f1f5f9; padding: 12px; text-align: left; font-size: 0.85rem; color: #64748b; text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
+        
+        select { padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; width: 100%; }
+        .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .btn-p { background: var(--primary); color: white; }
+        .btn-s { background: var(--success); color: white; }
+        
+        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <header>
-        <h1>PRESENSI DIGITAL X TKJ 2</h1>
-        <p style="color: #94a3b8;">Sistem Pencatatan Harian & Bulanan Otomatis</p>
-    </header>
-
-    <div class="control-panel">
-        <div class="card">
-            <h3>⚙️ Kontrol Harian</h3>
-            <label>Pilih Tanggal:</label>
-            <input type="date" id="absensiDate">
-            <button onclick="saveDaily()" class="btn btn-save">💾 Simpan Absen Hari Ini</button>
+<div class="main-content">
+    <div class="header">
+        <div>
+            <h1 style="margin:0; font-size: 1.5rem;">Sistem Presensi X TKJ 2</h1>
+            <p style="margin:5px 0 0; color: #64748b;">Kelompok Tugas: Manajemen Data Digital</p>
         </div>
-        <div class="card">
-            <h3>📊 Rekap Bulanan</h3>
-            <button onclick="exportFull()" class="btn btn-excel">📑 Download Rekap Lengkap (.xlsx)</button>
-            <p id="totalInfo" style="font-size: 0.8rem; color: #94a3b8; margin-top: 10px;"></p>
+        <div style="display:flex; gap:10px;">
+            <input type="date" id="dateInput" style="padding:10px; border-radius:8px; border:1px solid #cbd5e1;">
+            <button onclick="saveAbsen()" class="btn btn-p">Simpan Data</button>
+            <button onclick="exportExcel()" class="btn btn-s">Export Excel</button>
         </div>
     </div>
 
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Nama Siswa</th>
-                    <th>Status Hari Ini</th>
-                    <th>Hadir</th>
-                    <th>Izin</th>
-                    <th>Sakit</th>
-                    <th>Alpha</th>
-                </tr>
-            </thead>
-            <tbody id="mainTable"></tbody>
-        </table>
-    </div>
-
-    <div style="margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-        <div class="card"><canvas id="dailyChart"></canvas></div>
-        <div class="card"><canvas id="monthlyChart"></canvas></div>
+    <div class="grid-3">
+        <div class="card" style="grid-column: span 2;">
+            <h3 style="margin-top:0">Daftar Siswa</h3>
+            <div style="max-height: 400px; overflow-y: auto;">
+                <table>
+                    <thead>
+                        <tr><th>Nama</th><th>Status Kehadiran</th><th>Rekap (H/I/S/A)</th></tr>
+                    </thead>
+                    <tbody id="siswaTbody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card">
+            <h3 style="margin-top:0">Statistik Hari Ini</h3>
+            <canvas id="dailyChart"></canvas>
+            <div id="summaryText" style="margin-top:20px; font-size:0.9rem; color:#64748b;"></div>
+        </div>
     </div>
 </div>
 
 <script>
-    const students = ["Adrian Wansman Sugi", "Afriyani Sholeha", "Alberto Bryan", "Azan Azhar M.", "Azria Nurfadilla", "Banu Arkana Mibras H.", "Bintang Hafizh Khadaffi", "Cakra Prayata N.", "Dava Trian Putra", "Eriel Riva Fahreza", "Fadly Irsyad Febrian", "Fahrido Hidayat", "Gilang Ardian Pratama", "Hafidz Ridho Nur Fadilla", "Hafizah Nur Afrilyani", "Haikal Putra Lesmana", "Harits Shilah Al'adhawi", "Izyan Ghaisani Prasetyo", "M. Syehan Sidik Latuconsina", "Maira Luna Hastari", "Malik Ahmad Al Ghazi S.", "Marcellinus Nathan Doni K.", "Mochamad Eryan Ferully", "Moh. Zidha Aminnulloh", "Muchamad Iqbal Kurniadi", "Muhammad Baihaqi A.", "Muhammad Al-Fiansyakh", "Muhammad Raihan Febriano", "Muhammad Reza Pratama", "Putri Indah Lestari", "Regita Irzaprilya Arbadya F.", "Reno Setiawan", "Samuel Cristian Sulayman", "Umar Rafa Setiawan", "Zaskia Salsabila", "Zidan Alkaisar", "Ziyan Rashif Priyandaru", "M. Kafi Rasydan"];
+    const siswa = ["Adrian Wansman Sugi", "Afriyani Sholeha", "Alberto Bryan", "Azan Azhar M.", "Azria Nurfadilla", "Banu Arkana Mibras H.", "Bintang Hafizh Khadaffi", "Cakra Prayata N.", "Dava Trian Putra", "Eriel Riva Fahreza", "Fadly Irsyad Febrian", "Fahrido Hidayat", "Gilang Ardian Pratama", "Hafidz Ridho Nur Fadilla", "Hafizah Nur Afrilyani", "Haikal Putra Lesmana", "Harits Shilah Al'adhawi", "Izyan Ghaisani Prasetyo", "M. Syehan Sidik Latuconsina", "Maira Luna Hastari", "Malik Ahmad Al Ghazi S.", "Marcellinus Nathan Doni K.", "Mochamad Eryan Ferully", "Moh. Zidha Aminnulloh", "Muchamad Iqbal Kurniadi", "Muhammad Baihaqi A.", "Muhammad Al-Fiansyakh", "Muhammad Raihan Febriano", "Muhammad Reza Pratama", "Putri Indah Lestari", "Regita Irzaprilya Arbadya F.", "Reno Setiawan", "Samuel Cristian Sulayman", "Umar Rafa Setiawan", "Zaskia Salsabila", "Zidan Alkaisar", "Ziyan Rashif Priyandaru", "M. Kafi Rasydan"];
 
-    // Inisialisasi Database Lokal
-    let db = JSON.parse(localStorage.getItem('absensi_tkj2')) || {};
-    document.getElementById('absensiDate').valueAsDate = new Date();
+    let db = JSON.parse(localStorage.getItem('tkj2_db')) || {};
+    document.getElementById('dateInput').valueAsDate = new Date();
 
-    function renderTable() {
-        const table = document.getElementById('mainTable');
-        table.innerHTML = '';
-        
-        students.forEach(name => {
-            let stats = calculateStats(name);
-            table.innerHTML += `
+    function render() {
+        const tbody = document.getElementById('siswaTbody');
+        tbody.innerHTML = '';
+        siswa.forEach(name => {
+            let s = getStats(name);
+            tbody.innerHTML += `
                 <tr>
-                    <td style="font-weight:600">${name}</td>
+                    <td>${name}</td>
                     <td>
-                        <select onchange="updateTemp('${name}', this.value)">
-                            <option value="H">Hadir</option>
-                            <option value="I">Izin</option>
-                            <option value="S">Sakit</option>
-                            <option value="A">Alpha</option>
+                        <select onchange="updateRow('${name}', this.value)">
+                            <option value="H">Hadir</option><option value="I">Izin</option>
+                            <option value="S">Sakit</option><option value="A">Alpha</option>
                         </select>
                     </td>
-                    <td><span class="rekap-badge h">${stats.H}</span></td>
-                    <td><span class="rekap-badge i">${stats.I}</span></td>
-                    <td><span class="rekap-badge s">${stats.S}</span></td>
-                    <td><span class="rekap-badge a">${stats.A}</span></td>
+                    <td style="font-family:monospace; font-size:0.8rem">${s.H}H / ${s.I}I / ${s.S}S / ${s.A}A</td>
                 </tr>
             `;
         });
+        updateChart();
     }
 
-    function calculateStats(name) {
-        let h=0, i=0, s=0, a=0;
-        Object.values(db).forEach(dayData => {
-            if(dayData[name] === 'H') h++;
-            if(dayData[name] === 'I') i++;
-            if(dayData[name] === 'S') s++;
-            if(dayData[name] === 'A') a++;
-        });
-        return {H:h, I:i, S:s, A:a};
+    function getStats(name) {
+        let stats = {H:0, I:0, S:0, A:0};
+        Object.values(db).forEach(day => { if(day[name]) stats[day[name]]++; });
+        return stats;
     }
 
-    let tempAbsen = {};
-    function updateTemp(name, val) { tempAbsen[name] = val; }
+    let currentInput = {};
+    function updateRow(n, v) { currentInput[n] = v; updateChart(); }
 
-    function saveDaily() {
-        const date = document.getElementById('absensiDate').value;
-        if(!date) return alert("Pilih tanggal dulu!");
+    function saveAbsen() {
+        const d = document.getElementById('dateInput').value;
+        siswa.forEach(n => { if(!currentInput[n]) currentInput[n] = 'H'; });
+        db[d] = {...currentInput};
+        localStorage.setItem('tkj2_db', JSON.stringify(db));
+        alert('Data tersimpan secara lokal.');
+        render();
+    }
+
+    let myChart;
+    function updateChart() {
+        let counts = {H:0, I:0, S:0, A:0};
+        siswa.forEach(n => { let v = currentInput[n] || 'H'; counts[v]++; });
         
-        // Default semua Hadir jika tidak diubah
-        students.forEach(n => { if(!tempAbsen[n]) tempAbsen[n] = 'H'; });
-        
-        db[date] = {...tempAbsen};
-        localStorage.setItem('absensi_tkj2', JSON.stringify(db));
-        alert("Data tanggal " + date + " berhasil disimpan!");
-        renderTable();
-        updateCharts();
+        if(myChart) myChart.destroy();
+        myChart = new Chart(document.getElementById('dailyChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Hadir', 'Izin', 'Sakit', 'Alpha'],
+                datasets: [{ data: [counts.H, counts.I, counts.S, counts.A], backgroundColor: ['#059669', '#2563eb', '#d97706', '#dc2626'] }]
+            },
+            options: { cutout: '75%', plugins: { legend: { position: 'bottom' } } }
+        });
+        document.getElementById('summaryText').innerHTML = `Total Siswa: ${siswa.length} | Hadir: ${counts.H} | Tidak Hadir: ${siswa.length - counts.H}`;
     }
 
-    function exportFull() {
-        let exportData = students.map(name => {
-            let s = calculateStats(name);
-            return { "Nama Siswa": name, "Hadir": s.H, "Izin": s.I, "Sakit": s.S, "Alpha": s.A, "Total Hari": s.H+s.I+s.S+s.A };
-        });
-        const ws = XLSX.utils.json_to_sheet(exportData);
+    function exportExcel() {
+        const ws = XLSX.utils.json_to_sheet(siswa.map(n => ({ Nama: n, ...getStats(n) })));
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Rekap Bulanan");
-        XLSX.writeFile(wb, "Rekap_Bulanan_TKJ2.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, "Rekap");
+        XLSX.writeFile(wb, "Rekap_Absensi_TKJ2.xlsx");
     }
 
-    let dChart, mChart;
-    function updateCharts() {
-        const hArr = students.map(n => calculateStats(n).H);
-        if(mChart) mChart.destroy();
-        mChart = new Chart(document.getElementById('monthlyChart'), {
-            type: 'line',
-            data: { labels: students.map(n => n.split(' ')[0]), datasets: [{ label: 'Total Kehadiran', data: hArr, borderColor: '#a855f7', fill: true, backgroundColor: 'rgba(168, 85, 247, 0.1)' }] },
-            options: { plugins: { title: { display: true, text: 'Grafik Keaktifan Siswa' } } }
-        });
-    }
-
-    renderTable();
-    updateCharts();
+    render();
 </script>
 </body>
 </html>
