@@ -1,0 +1,1292 @@
+<!doctype html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Absensi Digital - X TKJ 2</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    html, body { height: 100%; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #dbeafe 0%, transparent 60%),
+        radial-gradient(1000px 500px at 110% 10%, #fce7f3 0%, transparent 60%),
+        linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+      color: #0f172a;
+    }
+    .font-display { font-family: 'Fraunces', serif; letter-spacing: -0.02em; }
+
+    /* Card */
+    .card {
+      background: rgba(255,255,255,0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(226,232,240,0.9);
+      box-shadow: 0 10px 30px -15px rgba(15,23,42,0.15);
+    }
+
+    /* Status buttons */
+    .status-btn {
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 13px;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1.5px solid #e2e8f0;
+      background: #fff;
+      color: #94a3b8;
+      transition: all .18s ease;
+      cursor: pointer;
+    }
+    .status-btn:hover { transform: translateY(-1px); border-color: #cbd5e1; }
+    .status-btn.active-H { background: linear-gradient(135deg,#10b981,#059669); color:#fff; border-color:transparent; box-shadow:0 6px 14px -6px rgba(16,185,129,.6);}
+    .status-btn.active-S { background: linear-gradient(135deg,#3b82f6,#2563eb); color:#fff; border-color:transparent; box-shadow:0 6px 14px -6px rgba(59,130,246,.6);}
+    .status-btn.active-I { background: linear-gradient(135deg,#eab308,#ca8a04); color:#fff; border-color:transparent; box-shadow:0 6px 14px -6px rgba(234,179,8,.6);}
+    .status-btn.active-A { background: linear-gradient(135deg,#ef4444,#dc2626); color:#fff; border-color:transparent; box-shadow:0 6px 14px -6px rgba(239,68,68,.6);}
+
+    /* Table */
+    .att-table { border-collapse: separate; border-spacing: 0; }
+    .att-table thead th {
+      position: sticky; top: 0; z-index: 5;
+      background: linear-gradient(180deg,#0f172a,#1e293b);
+      color: #f1f5f9;
+      font-weight: 600; font-size: 12px; letter-spacing: .04em; text-transform: uppercase;
+      padding: 14px 10px;
+    }
+    .att-table tbody tr { transition: background .15s ease; }
+    .att-table tbody tr:nth-child(even) { background: rgba(248,250,252,0.55); }
+    .att-table tbody tr:hover { background: #eef2ff; }
+    .att-table td { padding: 10px; border-bottom: 1px solid #eef2f7; vertical-align: middle; }
+
+    /* Photo bubble */
+    .photo-bubble {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: linear-gradient(135deg,#6366f1,#8b5cf6);
+      color:#fff; display:inline-flex; align-items:center; justify-content:center;
+      font-weight:700; font-size:14px; cursor:pointer;
+      border: 2px solid #fff; box-shadow: 0 4px 12px -4px rgba(99,102,241,.5);
+      transition: transform .2s ease;
+      overflow: hidden; position: relative;
+    }
+    .photo-bubble:hover { transform: scale(1.08); }
+    .photo-bubble img { width:100%; height:100%; object-fit:cover; }
+    .photo-bubble .cam-hint {
+      position:absolute; inset:0; background:rgba(15,23,42,.55);
+      display:flex; align-items:center; justify-content:center;
+      opacity:0; transition: opacity .2s ease;
+    }
+    .photo-bubble:hover .cam-hint { opacity:1; }
+
+    /* Legend chip */
+    .chip {
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 6px 12px; border-radius: 999px;
+      background: #fff; border:1px solid #e2e8f0;
+      font-size:12px; font-weight:600; color:#475569;
+    }
+    .dot { width:10px; height:10px; border-radius:50%; }
+
+    /* Stats card */
+    .stat-card {
+      border-radius: 16px;
+      padding: 16px 18px;
+      color: #fff;
+      position: relative; overflow: hidden;
+    }
+    .stat-card::after{
+      content:""; position:absolute; right:-30px; top:-30px;
+      width:110px; height:110px; border-radius:50%;
+      background: rgba(255,255,255,0.15);
+    }
+
+    /* DB Status badge */
+    .db-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 700;
+      border: 1px solid;
+    }
+    .db-badge.connected { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+    .db-badge.connecting { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+    .db-badge.error { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+    .db-dot { width:7px; height:7px; border-radius:50%; }
+
+    /* Export button */
+    .btn-export {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 8px 16px; border-radius: 10px;
+      background: linear-gradient(135deg,#10b981,#059669);
+      color: #fff; font-size: 13px; font-weight: 700;
+      border: none; cursor: pointer;
+      box-shadow: 0 4px 12px -4px rgba(16,185,129,.5);
+      transition: all .2s ease;
+    }
+    .btn-export:hover { transform: translateY(-1px); box-shadow: 0 6px 16px -4px rgba(16,185,129,.6); }
+    .btn-export:active { transform: translateY(0); }
+
+    /* Scrollbar */
+    .tbl-wrap::-webkit-scrollbar { height: 10px; width:10px; }
+    .tbl-wrap::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px) scale(0.8);
+      padding: 14px 20px; border-radius: 14px;
+      font-size: 15px; font-weight: 600; opacity:0; pointer-events:none;
+      transition: all .4s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 100;
+      box-shadow: 0 12px 40px -12px rgba(0,0,0,.5);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; gap: 10px;
+      letter-spacing: 0.3px;
+    }
+    .toast.show { 
+      opacity: 1; 
+      transform: translateX(-50%) translateY(0) scale(1);
+    }
+    .toast.success { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
+    .toast.error { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
+    .toast.info { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; }
+
+    @media (max-width: 768px) {
+      .att-table { font-size: 13px; }
+      .status-btn { width:30px; height:30px; font-size:12px;}
+    }
+
+
+  </style>
+</head>
+<body class="h-full w-full">
+
+  <div class="h-full w-full overflow-auto">
+    <main class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+      <header class="card rounded-3xl p-6 sm:p-8 mb-8 relative overflow-hidden">
+        <div class="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-gradient-to-br from-indigo-400/30 to-pink-400/30 blur-2xl"></div>
+        <div class="absolute -bottom-16 -left-16 w-64 h-64 rounded-full bg-gradient-to-br from-emerald-400/20 to-cyan-400/20 blur-2xl"></div>
+        <div class="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div class="flex items-center gap-4">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+              <i data-lucide="graduation-cap" class="w-8 h-8"></i>
+            </div>
+            <div>
+              <p class="text-xs font-semibold tracking-widest text-indigo-600 uppercase">Sistem Absensi Digital</p>
+              <h1 class="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900">SMK YADIKA 13</h1>
+              <p class="text-sm text-slate-600 font-medium">Tambun Selatan</p>
+            </div>
+          </div>
+          <div class="flex flex-col gap-3">
+            <div class="grid grid-cols-2 gap-3 text-sm">
+              <div class="bg-white/80 border border-slate-200 rounded-xl px-4 py-3">
+                <p class="text-[11px] font-semibold uppercase text-slate-500 tracking-wider">Kelas</p>
+                <p class="font-bold text-slate-900 text-base">X TKJ 2</p>
+              </div>
+              <div class="bg-white/80 border border-slate-200 rounded-xl px-4 py-3">
+                <p class="text-[11px] font-semibold uppercase text-slate-500 tracking-wider">Wali Kelas</p>
+                <p class="font-bold text-slate-900 text-sm leading-tight">Engglin Angela T.H., S.Kom</p>
+              </div>
+            </div>
+            <div class="flex justify-end">
+              <div id="dbStatusBadge" class="db-badge connecting">
+                <div class="db-dot" style="background:#f59e0b;"></div>
+                <span>Menghubungkan Database...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section id="statsOverview" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"></section>
+
+      <section class="card rounded-2xl p-4 sm:p-5 mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-sm font-semibold text-slate-700 mr-2">Keterangan:</span>
+          <span class="chip"><span class="dot" style="background:#10b981"></span>H - Hadir</span>
+          <span class="chip"><span class="dot" style="background:#3b82f6"></span>S - Sakit</span>
+          <span class="chip"><span class="dot" style="background:#eab308"></span>I - Izin</span>
+          <span class="chip"><span class="dot" style="background:#ef4444"></span>A - Alpa</span>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button id="btnFillAll" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm transition">
+            <i data-lucide="check-check" class="w-4 h-4"></i> Tandai Semua Hadir
+          </button>
+          <button id="btnResetToday" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold transition">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset Hari Ini
+          </button>
+        </div>
+      </section>
+
+      <section class="card rounded-2xl overflow-hidden mb-8">
+        <div class="px-5 py-4 border-b border-slate-200 flex flex-col gap-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex items-center gap-2">
+              <i data-lucide="clipboard-list" class="w-5 h-5 text-indigo-600"></i>
+              <div>
+                <h2 class="font-display text-xl font-bold text-slate-900">Absensi Harian</h2>
+                <p id="dateDisplay" class="text-sm text-slate-500 mt-1"></p>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button id="btnPrevDay" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition">
+                <i data-lucide="chevron-left" class="w-4 h-4 inline mr-1"></i>Sebelumnya
+              </button>
+              <input type="date" id="dateInput" class="px-3 py-2 border border-slate-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-400">
+              <button id="btnNextDay" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition">
+                Berikutnya<i data-lucide="chevron-right" class="w-4 h-4 inline ml-1"></i>
+              </button>
+              <button id="btnExportHarian" class="btn-export" title="Export absensi hari ini ke Excel">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                Export Excel
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="tbl-wrap overflow-x-auto">
+          <table class="att-table w-full min-w-[600px]">
+            <thead>
+              <tr>
+                <th class="text-left pl-5" style="width:50px;">No</th>
+                <th class="text-left" style="width:70px;">Foto</th>
+                <th class="text-left">Nama Siswa</th>
+                <th class="text-center pr-5">Status</th>
+              </tr>
+            </thead>
+            <tbody id="attBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card rounded-2xl p-5 sm:p-6 mb-8">
+        <div class="flex items-center gap-2 mb-5">
+          <i data-lucide="bar-chart-3" class="w-5 h-5 text-indigo-600"></i>
+          <h2 class="font-display text-xl font-bold text-slate-900">Rekapitulasi Harian</h2>
+        </div>
+        <div id="recapGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4"></div>
+      </section>
+
+      <section class="card rounded-2xl p-5 sm:p-6 mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+          <div class="flex items-center gap-2">
+            <i data-lucide="trending-up" class="w-5 h-5 text-indigo-600"></i>
+            <h2 class="font-display text-xl font-bold text-slate-900">Statistik Riwayat Absensi</h2>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+            <select id="chartMode" class="px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
+              <option value="siswa">Per Siswa</option>
+              <option value="perhari">Per Hari</option>
+              <option value="harkerja">Per Hari Sekolah (Sen-Jum)</option>
+              <option value="perbulan">Per Bulan</option>
+            </select>
+            <input type="month" id="monthInput" class="px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
+          </div>
+        </div>
+        <div class="relative" style="height:420px;">
+          <canvas id="attChart"></canvas>
+        </div>
+      </section>
+
+      <section class="card rounded-2xl p-5 sm:p-6 mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+          <div class="flex items-center gap-2">
+            <i data-lucide="calendar" class="w-5 h-5 text-indigo-600"></i>
+            <h2 class="font-display text-xl font-bold text-slate-900">Rekapitulasi Bulanan</h2>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="btnPrevMonth" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <input type="month" id="monthRecapInput" class="px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            <button id="btnNextMonth" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+            <button id="btnExportBulanan" class="btn-export" title="Export rekapitulasi bulanan ke Excel">
+              <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+              Export Excel Bulanan
+            </button>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="att-table w-full min-w-[700px]">
+            <thead>
+              <tr>
+                <th class="text-left pl-5" style="width:50px;">No</th>
+                <th class="text-left">Nama Siswa</th>
+                <th class="text-center">Hadir</th>
+                <th class="text-center">Sakit</th>
+                <th class="text-center">Izin</th>
+                <th class="text-center">Alpa</th>
+                <th class="text-center pr-5">%</th>
+              </tr>
+            </thead>
+            <tbody id="monthlyBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <footer class="text-center text-xs text-slate-500 py-4">
+        © <span id="yr"></span> SMK YADIKA 13 Tambun Selatan — Sistem Absensi Digital X TKJ 2
+        <span class="ml-2 opacity-60">• Database: IndexedDB</span>
+      </footer>
+    </main>
+  </div>
+
+  <input type="file" id="photoInput" accept="image/*" class="hidden">
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+  // ============================================================
+  // DATABASE (IndexedDB)
+  // ============================================================
+  class AttendanceDB {
+    constructor() {
+      this.dbName = 'AbsensiDigital_XTKJ2';
+      this.version = 1;
+      this.db = null;
+      this.ready = false;
+    }
+
+    async init() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(this.dbName, this.version);
+
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains('attendance')) {
+            const store = db.createObjectStore('attendance', { keyPath: 'id', autoIncrement: true });
+            // Composite index: (date, student_index) must be unique
+            store.createIndex('by_date_student', ['date', 'student_index'], { unique: true });
+            store.createIndex('by_date', 'date', { unique: false });
+          }
+          if (!db.objectStoreNames.contains('photos')) {
+            db.createObjectStore('photos', { keyPath: 'student_index' });
+          }
+        };
+
+        req.onsuccess = (e) => {
+          this.db = e.target.result;
+          this.ready = true;
+          resolve();
+        };
+
+        req.onerror = (e) => {
+          console.error('IndexedDB gagal dibuka:', e.target.error);
+          reject(e.target.error);
+        };
+
+        req.onblocked = () => {
+          console.warn('IndexedDB diblokir oleh tab lain');
+        };
+      });
+    }
+
+    // Ambil semua record absensi
+    async getAll() {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('attendance', 'readonly');
+        const store = tx.objectStore('attendance');
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    // Simpan/update 1 record (upsert)
+    async upsert(date, studentIndex, status) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('attendance', 'readwrite');
+        const store = tx.objectStore('attendance');
+        const idx = store.index('by_date_student');
+
+        const getReq = idx.get([date, studentIndex]);
+
+        getReq.onsuccess = () => {
+          const existing = getReq.result;
+          if (status === null) {
+            // Hapus jika ada
+            if (existing) store.delete(existing.id);
+          } else {
+            if (existing) {
+              // Update
+              store.put({ id: existing.id, date, student_index: studentIndex, status });
+            } else {
+              // Insert baru
+              store.add({ date, student_index: studentIndex, status });
+            }
+          }
+        };
+
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    // Simpan banyak record sekaligus (untuk "tandai semua hadir")
+    async upsertBatch(records) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('attendance', 'readwrite');
+        const store = tx.objectStore('attendance');
+        const idx = store.index('by_date_student');
+
+        records.forEach(({ date, student_index, status }) => {
+          const getReq = idx.get([date, student_index]);
+          getReq.onsuccess = () => {
+            const existing = getReq.result;
+            if (status === null) {
+              if (existing) store.delete(existing.id);
+            } else {
+              if (existing) {
+                store.put({ id: existing.id, date, student_index, status });
+              } else {
+                store.add({ date, student_index, status });
+              }
+            }
+          };
+        });
+
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    // Simpan foto
+    async savePhoto(studentIndex, dataUrl) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('photos', 'readwrite');
+        const store = tx.objectStore('photos');
+        store.put({ student_index: studentIndex, data: dataUrl });
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    // Ambil semua foto
+    async getAllPhotos() {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('photos', 'readonly');
+        const store = tx.objectStore('photos');
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+    }
+  }
+
+  // Instance database global
+  const db = new AttendanceDB();
+
+  // ============================================================
+  // DATA SISWA
+  // ============================================================
+  const STUDENTS = [
+    "Adrian Wansman Sugi","Afriyani Sholeha","Alberto Bryan","Azan Azhar M.",
+    "Azria Nurfadilla","Banu Arkana Mibras H.","Bintang Hafizh Khadaffi","Cakra Prayata N.",
+    "Dava Trian Putra","Eriel Riva Fahreza","Fadly Irsyad Febrian","Fahrido Hidayat",
+    "Gilang Ardian Pratama","Hafidz Ridho Nur Fadilla","Hafizah Nur Afrilyani","Haikal Putra Lesmana",
+    "Harits Shilah Al'adhawi","Izyan Ghaisani Prasetyo","M. Syehan Sidik Latuconsina","Maira Luna Hastari",
+    "Malik Ahmad Al Ghazi S.","Marcellinus Nathan Doni K.","Mochamad Eryan Ferully","Moh. Zidha Aminnulloh",
+    "Muchamad Iqbal Kurniadi","Muhammad Baihaqi A.","Muhammad Al-Fiansyakh","Muhammad Raihan Febriano",
+    "Muhammad Reza Pratama","Putri Indah Lestari","Regita Irzaprilya Arbadya F.","Reno Setiawan",
+    "Samuel Cristian Sulayman","Umar Rafa Setiawan","Zaskia Salsabila","Zidan Alkaisar",
+    "Ziyan Rashif Priyandaru","M. Kafi Rasydan"
+  ];
+  const DAY_NAMES = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+  const STATUSES = ["H","S","I","A"];
+
+  // State: attendanceByDate[dateString][studentIndex] = "H"|"S"|"I"|"A"|null
+  const attendanceByDate = {};
+  const photos = STUDENTS.map(() => null);
+
+  // State tanggal saat ini (format YYYY-MM-DD)
+  let currentDateKey = getDateKey(new Date());
+
+  // State bulan rekapitulasi (format YYYY-MM)
+  let recapMonthKey = currentDateKey.slice(0, 7);
+
+  // ============================================================
+  // HELPER TANGGAL
+  // ============================================================
+  function getDateKey(d) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function getDateFromKey(dateKey) {
+    const [year, month, day] = dateKey.split('-').map(Number);
+    const d = new Date(year, month - 1, day);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  function getMonday(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(d.setDate(diff));
+  }
+
+  function getCurrentMonthKey() {
+    return currentDateKey.slice(0, 7);
+  }
+
+  function getMonthDates(monthKey) {
+    const key = monthKey || getCurrentMonthKey();
+    const [year, month] = key.split('-').map(Number);
+    const firstDay = new Date(year, month - 1, 1);
+    const lastDay = new Date(year, month, 0);
+    const dates = [];
+    for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
+      dates.push(getDateKey(new Date(d)));
+    }
+    return dates;
+  }
+
+  function getRecapMonthDates() {
+    return getMonthDates(recapMonthKey);
+  }
+
+  function getDateAttendance() {
+    if (!attendanceByDate[currentDateKey]) {
+      attendanceByDate[currentDateKey] = STUDENTS.map(() => null);
+    }
+    return attendanceByDate[currentDateKey];
+  }
+
+  function formatDate(d) {
+    const day = DAY_NAMES[d.getDay()];
+    const date = d.toLocaleDateString("id-ID", { year: "numeric", month: "long", day: "numeric" });
+    return `${day}, ${date}`;
+  }
+
+  // ============================================================
+  // HELPERS UI
+  // ============================================================
+  const $ = (s) => document.querySelector(s);
+
+  function initials(name) {
+    const parts = name.split(/\s+/).filter(Boolean);
+    return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+  }
+
+  function toast(msg, type = "success") {
+    const t = $("#toast");
+    const icons = { success: "✓", error: "✕", info: "ℹ" };
+    t.className = "toast " + type;
+    t.innerHTML = `<span style="font-size:16px">${icons[type] || "ℹ"}</span><span>${msg}</span>`;
+    t.classList.add("show");
+    clearTimeout(t._tid);
+    t._tid = setTimeout(() => t.classList.remove("show"), 2600);
+  }
+
+  function setDbStatus(status) {
+    const badge = $("#dbStatusBadge");
+    const configs = {
+      connected: { cls: 'connected', dotColor: '#22c55e', text: 'Database Terhubung (IndexedDB)' },
+      connecting: { cls: 'connecting', dotColor: '#f59e0b', text: 'Menghubungkan Database...' },
+      error: { cls: 'error', dotColor: '#ef4444', text: 'Database Error' },
+    };
+    const cfg = configs[status] || configs.connecting;
+    badge.className = `db-badge ${cfg.cls}`;
+    badge.innerHTML = `<div class="db-dot" style="background:${cfg.dotColor};"></div><span>${cfg.text}</span>`;
+  }
+
+  function updateDateDisplay() {
+    const displayDate = getDateFromKey(currentDateKey);
+    $("#dateDisplay").textContent = formatDate(displayDate);
+    $("#dateInput").value = currentDateKey;
+    $("#monthInput").value = getCurrentMonthKey();
+  }
+
+  // ============================================================
+  // RENDER TABLE
+  // ============================================================
+  function renderTable() {
+    const attendance = getDateAttendance();
+    const tbody = $("#attBody");
+    tbody.innerHTML = "";
+
+    STUDENTS.forEach((name, i) => {
+      const tr = document.createElement("tr");
+      const photoHTML = photos[i]
+        ? `<img src="${photos[i]}" alt="${name}"/>`
+        : `<span>${initials(name)}</span>`;
+      const status = attendance[i];
+      const statusHTML = STATUSES.map(s =>
+        `<button class="status-btn ${status === s ? 'active-' + s : ''}" data-s="${s}" data-i="${i}">${s}</button>`
+      ).join("");
+
+      tr.innerHTML = `
+        <td class="pl-5 text-slate-500 font-semibold">${String(i + 1).padStart(2, "0")}</td>
+        <td>
+          <button class="photo-bubble" data-photo="${i}" title="Unggah foto ${name}">
+            ${photoHTML}
+            <span class="cam-hint"><i data-lucide="camera" style="width:18px;height:18px;color:#fff"></i></span>
+          </button>
+        </td>
+        <td class="font-semibold text-slate-800">${name}</td>
+        <td class="text-center pr-5"><div class="inline-flex gap-1">${statusHTML}</div></td>
+      `;
+      tbody.appendChild(tr);
+    });
+    lucide.createIcons();
+  }
+
+  // ============================================================
+  // STATUS CLICK HANDLER
+  // ============================================================
+  $("#attBody").addEventListener("click", async (e) => {
+    const btn = e.target.closest(".status-btn");
+    if (btn) {
+      const i = +btn.dataset.i;
+      const s = btn.dataset.s;
+      const attendance = getDateAttendance();
+
+      // Toggle: klik status yang sama = hapus status
+      const newStatus = (attendance[i] === s) ? null : s;
+
+      // Update local state dulu
+      const prevStatus = attendance[i];
+      attendance[i] = newStatus;
+
+      // Update UI tombol langsung (responsive)
+      const group = btn.parentElement;
+      group.querySelectorAll(".status-btn").forEach(b => {
+        b.classList.remove("active-H", "active-S", "active-I", "active-A");
+        if (attendance[i] === b.dataset.s) b.classList.add("active-" + b.dataset.s);
+      });
+
+      // Simpan ke IndexedDB
+      try {
+        await db.upsert(currentDateKey, i, newStatus);
+        if (newStatus) {
+          toast(`${STUDENTS[i]}: ${newStatus === 'H' ? 'Hadir' : newStatus === 'S' ? 'Sakit' : newStatus === 'I' ? 'Izin' : 'Alpa'}`, "success");
+        } else {
+          toast(`Status ${STUDENTS[i]} dihapus`, "info");
+        }
+      } catch (err) {
+        console.error("Gagal simpan DB:", err);
+        // Rollback state
+        attendance[i] = prevStatus;
+        group.querySelectorAll(".status-btn").forEach(b => {
+          b.classList.remove("active-H", "active-S", "active-I", "active-A");
+          if (attendance[i] === b.dataset.s) b.classList.add("active-" + b.dataset.s);
+        });
+        toast("Gagal menyimpan ke database", "error");
+      }
+
+      refreshStats();
+      return;
+    }
+
+    // Upload foto
+    const photoBtn = e.target.closest("[data-photo]");
+    if (photoBtn) {
+      const idx = +photoBtn.dataset.photo;
+      const input = $("#photoInput");
+      input.onchange = async () => {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+          photos[idx] = ev.target.result;
+          try {
+            await db.savePhoto(idx, ev.target.result);
+          } catch (err) {
+            console.warn("Gagal simpan foto:", err);
+          }
+          renderTable();
+          toast(`Foto ${STUDENTS[idx]} berhasil diunggah`, "success");
+        };
+        reader.readAsDataURL(file);
+        input.value = "";
+      };
+      input.click();
+    }
+  });
+
+  // ============================================================
+  // STATS OVERVIEW
+  // ============================================================
+  function renderStatsOverview() {
+    const attendance = getDateAttendance();
+    let h = 0, s = 0, ii = 0, a = 0;
+    attendance.forEach(v => {
+      if (v === "H") h++; else if (v === "S") s++; else if (v === "I") ii++; else if (v === "A") a++;
+    });
+    const total = h + s + ii + a;
+    const pct = total ? Math.round((h / total) * 100) : 0;
+
+    const cards = [
+      { label: "Total Siswa", val: STUDENTS.length, icon: "users", bg: "linear-gradient(135deg,#6366f1,#8b5cf6)" },
+      { label: "Hadir Hari Ini", val: h, icon: "check-circle", bg: "linear-gradient(135deg,#10b981,#059669)" },
+      { label: "Kehadiran", val: pct + "%", icon: "trending-up", bg: "linear-gradient(135deg,#0ea5e9,#2563eb)" },
+      { label: "Tidak Hadir", val: s + ii + a, icon: "user-x", bg: "linear-gradient(135deg,#f43f5e,#e11d48)" },
+    ];
+
+    $("#statsOverview").innerHTML = cards.map(c => `
+      <div class="stat-card" style="background:${c.bg}">
+        <div class="flex items-start justify-between relative z-10">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wider opacity-90">${c.label}</p>
+            <p class="font-display text-3xl font-bold mt-1">${c.val}</p>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+            <i data-lucide="${c.icon}" class="w-5 h-5"></i>
+          </div>
+        </div>
+      </div>`).join("");
+    lucide.createIcons();
+  }
+
+  // ============================================================
+  // DAILY RECAP
+  // ============================================================
+  function renderRecap() {
+    const grid = $("#recapGrid");
+    grid.innerHTML = "";
+    const attendance = getDateAttendance();
+    let h = 0, s = 0, ii = 0, a = 0;
+    attendance.forEach(v => {
+      if (v === "H") h++; else if (v === "S") s++; else if (v === "I") ii++; else if (v === "A") a++;
+    });
+    const absent = s + ii + a;
+    const pctH = STUDENTS.length > 0 ? Math.round((h / STUDENTS.length) * 100) : 0;
+    const pctA = STUDENTS.length > 0 ? Math.round((absent / STUDENTS.length) * 100) : 0;
+    const displayDate = getDateFromKey(currentDateKey);
+
+    grid.innerHTML = `
+      <div class="bg-gradient-to-br from-white to-slate-50 border border-slate-200 rounded-xl p-4 lg:col-span-5">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-slate-800">${formatDate(displayDate)}</h3>
+          <span class="text-xs font-bold px-2 py-1 rounded-md bg-indigo-100 text-indigo-700">${pctH}%</span>
+        </div>
+        <div class="w-full h-3 bg-slate-200 rounded-full overflow-hidden mb-4">
+          <div class="h-full bg-gradient-to-r from-emerald-500 to-green-500 rounded-full transition-all duration-500" style="width:${pctH}%"></div>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+          <div class="flex items-center justify-between bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-200">
+            <span class="font-semibold text-emerald-700">Hadir</span><span class="font-bold text-emerald-800 text-base">${h}</span>
+          </div>
+          <div class="flex items-center justify-between bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">
+            <span class="font-semibold text-amber-700">Sakit</span><span class="font-bold text-amber-800 text-base">${s}</span>
+          </div>
+          <div class="flex items-center justify-between bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
+            <span class="font-semibold text-blue-700">Izin</span><span class="font-bold text-blue-800 text-base">${ii}</span>
+          </div>
+          <div class="flex items-center justify-between bg-red-50 px-3 py-2 rounded-lg border border-red-200">
+            <span class="font-semibold text-red-700">Alpa</span><span class="font-bold text-red-800 text-base">${a}</span>
+          </div>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-3 font-medium">
+          Tidak hadir: <span class="font-bold text-slate-700">${absent} siswa (${pctA}%)</span>
+          &nbsp;•&nbsp; Belum diisi: <span class="font-bold text-slate-700">${STUDENTS.length - h - s - ii - a} siswa</span>
+        </p>
+      </div>`;
+  }
+
+  // ============================================================
+  // CHART
+  // ============================================================
+  let chart;
+  function renderChart() {
+    const mode = $("#chartMode").value;
+    const ctx = $("#attChart").getContext("2d");
+    if (chart) chart.destroy();
+
+    if (mode === "perhari") {
+      const dayAtt = attendanceByDate[currentDateKey] || STUDENTS.map(() => null);
+      let H = 0, S = 0, II = 0, A = 0;
+      dayAtt.forEach(v => {
+        if (v === "H") H++; else if (v === "S") S++; else if (v === "I") II++; else if (v === "A") A++;
+      });
+      const total = H + S + II + A;
+      const pct = (x) => total ? Math.round((x / total) * 100) : 0;
+      chart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: [`Hadir\n${pct(H)}%`, `Sakit\n${pct(S)}%`, `Izin\n${pct(II)}%`, `Alpa\n${pct(A)}%`],
+          datasets: [{ data: [H, S, II, A], backgroundColor: ["#10b981", "#3b82f6", "#eab308", "#ef4444"], borderRadius: 8 }]
+        },
+        options: { ...chartOpts("Jumlah"), plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw} siswa` } } } }
+      });
+
+    } else if (mode === "harkerja") {
+      const currentDate = getDateFromKey(currentDateKey);
+      const weekStart = getMonday(currentDate);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 4);
+      let H = 0, S = 0, II = 0, A = 0;
+      for (let d = new Date(weekStart); d <= weekEnd; d.setDate(d.getDate() + 1)) {
+        const dk = getDateKey(new Date(d));
+        if (attendanceByDate[dk]) {
+          attendanceByDate[dk].forEach(v => {
+            if (v === "H") H++; else if (v === "S") S++; else if (v === "I") II++; else if (v === "A") A++;
+          });
+        }
+      }
+      const total = H + S + II + A;
+      const pct = (x) => total ? Math.round((x / total) * 100) : 0;
+      const range = `${weekStart.toLocaleDateString("id-ID", { day: "numeric", month: "short" })} - ${weekEnd.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}`;
+      chart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: [`Hadir\n${pct(H)}%`, `Sakit\n${pct(S)}%`, `Izin\n${pct(II)}%`, `Alpa\n${pct(A)}%`],
+          datasets: [{ label: `Minggu: ${range}`, data: [H, S, II, A], backgroundColor: ["#10b981", "#3b82f6", "#eab308", "#ef4444"], borderRadius: 8 }]
+        },
+        options: { ...chartOpts("Jumlah"), plugins: { legend: { display: true }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw} siswa` } } } }
+      });
+
+    } else if (mode === "perbulan") {
+      const monthDates = getMonthDates();
+      const labels = monthDates.map(dk => getDateFromKey(dk).getDate());
+      const data = monthDates.map(dk =>
+        (attendanceByDate[dk] || []).filter(v => v === "H").length
+      );
+      chart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [{
+            label: "Total Hadir per Hari",
+            data,
+            borderColor: "#3b82f6",
+            backgroundColor: "rgba(59,130,246,0.1)",
+            fill: true, borderWidth: 3, pointRadius: 5,
+            pointBackgroundColor: "#3b82f6", pointBorderColor: "#fff", pointBorderWidth: 2, tension: 0.3
+          }]
+        },
+        options: {
+          ...chartOpts("Jumlah Siswa Hadir"),
+          scales: { y: { beginAtZero: true, max: STUDENTS.length, ticks: { stepSize: 1 } } },
+          plugins: { tooltip: { callbacks: { label: (ctx) => { const pct = Math.round((ctx.raw / STUDENTS.length) * 100); return `${ctx.raw} siswa (${pct}%)`; } } } }
+        }
+      });
+
+    } else {
+      // Per siswa
+      const monthDates = getMonthDates();
+      const labels = STUDENTS.map(n => n.length > 14 ? n.slice(0, 13) + "…" : n);
+      const data = STUDENTS.map((_, i) => {
+        let count = 0;
+        monthDates.forEach(dk => {
+          if (attendanceByDate[dk] && attendanceByDate[dk][i] === "H") count++;
+        });
+        return count;
+      });
+      chart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [{ label: "Total Hari Hadir", data, backgroundColor: "#10b981", borderRadius: 6 }]
+        },
+        options: {
+          ...chartOpts("Hari Hadir"),
+          scales: { y: { beginAtZero: true, max: monthDates.length || 10, ticks: { stepSize: 1 } } },
+          plugins: { legend: { display: true, position: "top", labels: { font: { family: "Plus Jakarta Sans", weight: "600" }, usePointStyle: true, pointStyle: "circle", boxWidth: 12, padding: 16 } } }
+        }
+      });
+    }
+  }
+
+  function chartOpts(yTitle) {
+    return {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: "top", labels: { font: { family: "Plus Jakarta Sans", weight: "600" }, usePointStyle: true, pointStyle: "circle" } },
+        tooltip: { backgroundColor: "#0f172a", padding: 12, cornerRadius: 10, titleFont: { family: "Plus Jakarta Sans", weight: "700" }, bodyFont: { family: "Plus Jakarta Sans" } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: "Plus Jakarta Sans", weight: "600" }, color: "#475569", maxRotation: 45, minRotation: 0 } },
+        y: { beginAtZero: true, grid: { color: "#e2e8f0" }, ticks: { font: { family: "Plus Jakarta Sans" }, color: "#64748b" }, title: { display: !!yTitle, text: yTitle || "", font: { family: "Plus Jakarta Sans", weight: "600" } } }
+      }
+    };
+  }
+
+  // ============================================================
+  // MONTHLY RECAP TABLE
+  // ============================================================
+  function renderMonthly() {
+    const tbody = $("#monthlyBody");
+    tbody.innerHTML = "";
+    const monthDates = getRecapMonthDates();
+
+    STUDENTS.forEach((name, i) => {
+      let h = 0, s = 0, ii = 0, a = 0;
+      monthDates.forEach(dk => {
+        if (attendanceByDate[dk]) {
+          const v = attendanceByDate[dk][i];
+          if (v === "H") h++; else if (v === "S") s++; else if (v === "I") ii++; else if (v === "A") a++;
+        }
+      });
+      const total = h + s + ii + a;
+      const pct = total ? Math.round((h / total) * 100) : 0;
+      const pctColor = pct >= 80 ? "#dbeafe" : pct >= 60 ? "#fef3c7" : "#fee2e2";
+      const pctTextColor = pct >= 80 ? "#0369a1" : pct >= 60 ? "#b45309" : "#991b1b";
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="pl-5 text-slate-500 font-semibold">${String(i + 1).padStart(2, "0")}</td>
+        <td class="font-semibold text-slate-800">${name}</td>
+        <td class="text-center"><span class="inline-block px-3 py-1 rounded-lg bg-emerald-100 text-emerald-700 font-bold text-sm">${h}</span></td>
+        <td class="text-center"><span class="inline-block px-3 py-1 rounded-lg bg-amber-100 text-amber-700 font-bold text-sm">${s}</span></td>
+        <td class="text-center"><span class="inline-block px-3 py-1 rounded-lg bg-blue-100 text-blue-700 font-bold text-sm">${ii}</span></td>
+        <td class="text-center"><span class="inline-block px-3 py-1 rounded-lg bg-red-100 text-red-700 font-bold text-sm">${a}</span></td>
+        <td class="text-center pr-5"><span class="inline-block px-3 py-1 rounded-lg font-bold text-sm" style="background:${pctColor};color:${pctTextColor}">${pct}%</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    $("#monthRecapInput").value = recapMonthKey;
+  }
+
+  // ============================================================
+  // REFRESH SEMUA UI
+  // ============================================================
+  function refreshStats() {
+    renderStatsOverview();
+    renderRecap();
+    renderChart();
+    renderMonthly();
+  }
+
+  function refreshAll() {
+    updateDateDisplay();
+    renderTable();
+    refreshStats();
+  }
+
+  // ============================================================
+  // EXPORT EXCEL - HARIAN
+  // ============================================================
+  function exportHarian() {
+    if (!window.XLSX) {
+      toast("Library SheetJS belum tersedia, coba refresh halaman", "error");
+      return;
+    }
+
+    const attendance = getDateAttendance();
+    const displayDate = formatDate(getDateFromKey(currentDateKey));
+    let h = 0, s = 0, ii = 0, a = 0, belum = 0;
+    attendance.forEach(v => {
+      if (v === "H") h++; else if (v === "S") s++; else if (v === "I") ii++; else if (v === "A") a++; else belum++;
+    });
+    const pctH = STUDENTS.length > 0 ? Math.round((h / STUDENTS.length) * 100) : 0;
+
+    const wb = window.XLSX.utils.book_new();
+
+    // ─── Sheet 1: Daftar Absensi ───────────────────────────────
+    const wsData = [
+      ["ABSENSI HARIAN - SMK YADIKA 13"],
+      ["Kelas: X TKJ 2", "", "Wali Kelas: Engglin Angela T.H., S.Kom"],
+      [`Tanggal: ${displayDate}`],
+      [],
+      ["No", "Nama Siswa", "Status", "Keterangan"],
+      ...STUDENTS.map((name, i) => {
+        const status = attendance[i] || "-";
+        const ket = { H: "Hadir", S: "Sakit", I: "Izin", A: "Alpa", "-": "Belum diisi" }[status] || "-";
+        return [i + 1, name, status, ket];
+      }),
+      [],
+      ["── REKAPITULASI ────────────────────────"],
+      ["Hadir", h, "Sakit", s, "Izin", ii, "Alpa", a, "Belum Diisi", belum],
+      ["Total Siswa", STUDENTS.length, "% Kehadiran", pctH + "%"],
+    ];
+
+    const ws1 = window.XLSX.utils.aoa_to_sheet(wsData);
+    ws1["!cols"] = [{ wch: 5 }, { wch: 35 }, { wch: 10 }, { wch: 15 }];
+    ws1["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
+    window.XLSX.utils.book_append_sheet(wb, ws1, "Absensi Harian");
+
+    // ─── Sheet 2: Rekap per Status ────────────────────────────
+    const hadir = STUDENTS.filter((_, i) => attendance[i] === "H");
+    const sakit = STUDENTS.filter((_, i) => attendance[i] === "S");
+    const izin = STUDENTS.filter((_, i) => attendance[i] === "I");
+    const alpa = STUDENTS.filter((_, i) => attendance[i] === "A");
+    const maxLen = Math.max(hadir.length, sakit.length, izin.length, alpa.length, 1);
+    const ws2Data = [
+      [`Rekap Status - ${displayDate}`],
+      [],
+      ["HADIR", "SAKIT", "IZIN", "ALPA"],
+      ...Array.from({ length: maxLen }, (_, i) => [
+        hadir[i] || "", sakit[i] || "", izin[i] || "", alpa[i] || ""
+      ]),
+      [],
+      ["Total", hadir.length, sakit.length, izin.length, alpa.length]
+    ];
+    const ws2 = window.XLSX.utils.aoa_to_sheet(ws2Data);
+    ws2["!cols"] = [{ wch: 35 }, { wch: 35 }, { wch: 35 }, { wch: 35 }];
+    window.XLSX.utils.book_append_sheet(wb, ws2, "Per Status");
+
+    window.XLSX.utils.book_set_sheet_name(wb, ws1, "Absensi Harian");
+    window.XLSX.writeFile(wb, `Absensi_Harian_${currentDateKey}.xlsx`);
+    toast("✅ Export Excel harian berhasil!", "success");
+  }
+
+  // ============================================================
+  // EXPORT EXCEL - BULANAN
+  // ============================================================
+  function exportBulanan() {
+    if (!window.XLSX) {
+      toast("Library SheetJS belum tersedia, coba refresh halaman", "error");
+      return;
+    }
+
+    const monthDates = getRecapMonthDates();
+    const [year, month] = recapMonthKey.split('-').map(Number);
+    const monthName = new Date(year, month - 1, 1).toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+
+    const wb = window.XLSX.utils.book_new();
+
+    // ─── Sheet 1: Rekapitulasi Bulanan ────────────────────────
+    const header1 = ["No", "Nama Siswa", "Hadir", "Sakit", "Izin", "Alpa", "Total Dicatat", "% Kehadiran"];
+    const rows1 = STUDENTS.map((name, i) => {
+      let h = 0, s = 0, ii = 0, a = 0;
+      monthDates.forEach(dk => {
+        if (attendanceByDate[dk]) {
+          const v = attendanceByDate[dk][i];
+          if (v === "H") h++; else if (v === "S") s++; else if (v === "I") ii++; else if (v === "A") a++;
+        }
+      });
+      const total = h + s + ii + a;
+      const pct = total ? Math.round((h / total) * 100) : 0;
+      return [i + 1, name, h, s, ii, a, total, pct + "%"];
+    });
+
+    // Total baris bawah
+    const totals = rows1.reduce((acc, row) => {
+      acc[0] = (acc[0] || 0) + row[2]; // H
+      acc[1] = (acc[1] || 0) + row[3]; // S
+      acc[2] = (acc[2] || 0) + row[4]; // I
+      acc[3] = (acc[3] || 0) + row[5]; // A
+      return acc;
+    }, {});
+
+    const ws1Data = [
+      ["REKAPITULASI BULANAN - SMK YADIKA 13"],
+      ["Kelas: X TKJ 2", "", "Wali Kelas: Engglin Angela T.H., S.Kom"],
+      [`Periode: ${monthName}`, "", `Total Hari: ${monthDates.length}`],
+      [],
+      header1,
+      ...rows1,
+      [],
+      ["", "TOTAL", totals[0] || 0, totals[1] || 0, totals[2] || 0, totals[3] || 0]
+    ];
+    const ws1 = window.XLSX.utils.aoa_to_sheet(ws1Data);
+    ws1["!cols"] = [{ wch: 5 }, { wch: 35 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 14 }, { wch: 14 }];
+    window.XLSX.utils.book_append_sheet(wb, ws1, "Rekapitulasi Bulanan");
+
+    // ─── Sheet 2: Detail per Tanggal (Pivot) ─────────────────
+    const pivotDayLabels = monthDates.map(dk => getDateFromKey(dk).getDate());
+    const pivotHeader = ["No", "Nama Siswa", ...pivotDayLabels];
+    const pivotRows = STUDENTS.map((name, i) => [
+      i + 1,
+      name,
+      ...monthDates.map(dk => (attendanceByDate[dk] && attendanceByDate[dk][i]) || "-")
+    ]);
+
+    // Baris hitungan per tanggal
+    const countRow = ["", "Total Hadir", ...monthDates.map(dk =>
+      (attendanceByDate[dk] || []).filter(v => v === "H").length
+    )];
+
+    const ws2Data = [
+      [`DETAIL ABSENSI PER TANGGAL - ${monthName}`],
+      [],
+      pivotHeader,
+      ...pivotRows,
+      [],
+      countRow
+    ];
+    const ws2 = window.XLSX.utils.aoa_to_sheet(ws2Data);
+    ws2["!cols"] = [{ wch: 5 }, { wch: 35 }, ...monthDates.map(() => ({ wch: 5 }))];
+    window.XLSX.utils.book_append_sheet(wb, ws2, "Detail Per Tanggal");
+
+    // ─── Sheet 3: Siswa Perlu Perhatian (<80%) ───────────────
+    const alertRows = rows1.filter(row => {
+      const pct = parseInt(row[7]);
+      return !isNaN(pct) && pct < 80 && row[6] > 0;
+    }).sort((a, b) => parseInt(a[7]) - parseInt(b[7]));
+
+    const ws3Data = [
+      [`SISWA PERLU PERHATIAN (Kehadiran < 80%) - ${monthName}`],
+      [],
+      header1,
+      ...alertRows
+    ];
+    const ws3 = window.XLSX.utils.aoa_to_sheet(ws3Data);
+    ws3["!cols"] = [{ wch: 5 }, { wch: 35 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 14 }, { wch: 14 }];
+    window.XLSX.utils.book_append_sheet(wb, ws3, "Perlu Perhatian");
+
+    window.XLSX.writeFile(wb, `Rekap_Bulanan_${recapMonthKey}.xlsx`);
+    toast(`✅ Export Excel bulanan berhasil! (${alertRows.length} siswa < 80%)`, "success");
+  }
+
+  // ============================================================
+  // NAVIGASI TANGGAL
+  // ============================================================
+  $("#btnPrevDay").addEventListener("click", () => {
+    const d = getDateFromKey(currentDateKey);
+    d.setDate(d.getDate() - 1);
+    currentDateKey = getDateKey(d);
+    refreshAll();
+  });
+
+  $("#btnNextDay").addEventListener("click", () => {
+    const d = getDateFromKey(currentDateKey);
+    d.setDate(d.getDate() + 1);
+    currentDateKey = getDateKey(d);
+    refreshAll();
+  });
+
+  $("#dateInput").addEventListener("change", () => {
+    const val = $("#dateInput").value;
+    if (val) { currentDateKey = val; refreshAll(); }
+  });
+
+  $("#monthInput").addEventListener("change", () => {
+    const val = $("#monthInput").value;
+    if (val) {
+      const [year, month] = val.split("-").map(Number);
+      currentDateKey = getDateKey(new Date(year, month - 1, 1));
+      refreshAll();
+    }
+  });
+
+  // ============================================================
+  // NAVIGASI BULAN REKAP
+  // ============================================================
+  $("#monthRecapInput").addEventListener("change", () => {
+    const val = $("#monthRecapInput").value;
+    if (val) { recapMonthKey = val; renderMonthly(); }
+  });
+
+  $("#btnPrevMonth").addEventListener("click", () => {
+    const [year, month] = recapMonthKey.split('-').map(Number);
+    let nm = month - 1, ny = year;
+    if (nm < 1) { nm = 12; ny--; }
+    recapMonthKey = `${ny}-${String(nm).padStart(2, '0')}`;
+    renderMonthly();
+  });
+
+  $("#btnNextMonth").addEventListener("click", () => {
+    const [year, month] = recapMonthKey.split('-').map(Number);
+    let nm = month + 1, ny = year;
+    if (nm > 12) { nm = 1; ny++; }
+    recapMonthKey = `${ny}-${String(nm).padStart(2, '0')}`;
+    renderMonthly();
+  });
+
+  // ============================================================
+  // CHART MODE
+  // ============================================================
+  $("#chartMode").addEventListener("change", renderChart);
+
+  // ============================================================
+  // TOMBOL AKSI
+  // ============================================================
+  $("#btnFillAll").addEventListener("click", async () => {
+    const att = getDateAttendance();
+
+    // Siapkan records untuk upsert batch
+    const records = STUDENTS.map((_, i) => ({
+      date: currentDateKey,
+      student_index: i,
+      status: "H"
+    }));
+
+    // Update local state
+    records.forEach(r => { att[r.student_index] = "H"; });
+    renderTable();
+    refreshStats();
+
+    // Simpan ke database
+    try {
+      await db.upsertBatch(records);
+      toast(`Semua ${STUDENTS.length} siswa ditandai Hadir ✓`, "success");
+    } catch (err) {
+      console.error("Gagal simpan batch:", err);
+      toast("Data ditandai di UI, tapi ada masalah menyimpan ke database", "error");
+    }
+  });
+
+  $("#btnResetToday").addEventListener("click", async () => {
+    const att = getDateAttendance();
+    // Hapus semua status hari ini
+    const records = STUDENTS.map((_, i) => ({
+      date: currentDateKey,
+      student_index: i,
+      status: null
+    }));
+    records.forEach((_, i) => { att[i] = null; });
+    renderTable();
+    refreshStats();
+    try {
+      await db.upsertBatch(records);
+      toast("Absensi hari ini berhasil direset", "info");
+    } catch (err) {
+      toast("Reset di UI berhasil, tapi ada masalah di database", "error");
+    }
+  });
+
+  // Export buttons
+  $("#btnExportHarian").addEventListener("click", exportHarian);
+  $("#btnExportBulanan").addEventListener("click", exportBulanan);
+
+  // ============================================================
+  // INIT APLIKASI
+  // ============================================================
+  // Render UI langsung tanpa menunggu database
+  document.getElementById("yr").textContent = new Date().getFullYear();
+  refreshAll();
+
+  // Load database di background (tidak memblokir tampilan)
+  (async () => {
+    setDbStatus("connecting");
+    try {
+      await db.init();
+
+      const records = await db.getAll();
+      records.forEach(record => {
+        const dk = record.date;
+        const si = record.student_index;
+        const st = record.status;
+        if (!attendanceByDate[dk]) {
+          attendanceByDate[dk] = STUDENTS.map(() => null);
+        }
+        if (si >= 0 && si < STUDENTS.length) {
+          attendanceByDate[dk][si] = st;
+        }
+      });
+
+      try {
+        const photoRecords = await db.getAllPhotos();
+        photoRecords.forEach(p => {
+          if (p.student_index >= 0 && p.student_index < STUDENTS.length) {
+            photos[p.student_index] = p.data;
+          }
+        });
+      } catch (photoErr) {
+        console.warn("Gagal load foto:", photoErr);
+      }
+
+      setDbStatus("connected");
+      console.log(`✅ Database dimuat: ${records.length} record absensi`);
+
+      // Refresh UI setelah data DB masuk
+      if (records.length > 0) refreshAll();
+
+    } catch (err) {
+      console.error("Gagal inisialisasi IndexedDB:", err);
+      setDbStatus("error");
+    }
+  })();
+  </script>
+</body>
+</html>
