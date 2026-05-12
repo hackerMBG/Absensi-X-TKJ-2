@@ -332,7 +332,7 @@
 
       <footer class="text-center text-xs text-slate-500 py-4">
         © <span id="yr"></span> SMK YADIKA 13 Tambun Selatan — Sistem Absensi Digital X TKJ 2
-        <span class="ml-2 opacity-60">• Database: Firebase Firestore (Online)</span>
+        <span class="ml-2 opacity-60">• Database: Firebase Firestore (/absen)</span>
       </footer>
     </main>
   </div>
@@ -359,17 +359,16 @@
     measurementId: "G-B3TG3K9E7X"
   };
 
-  // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
   const dbFirestore = firebase.firestore();
 
   class AttendanceDB {
     constructor() { this.ready = true; }
-    async init() { return true; } // Firebase auto-init
+    async init() { return true; }
 
     async getAll() {
       try {
-        const snapshot = await dbFirestore.collection('attendance').get();
+        const snapshot = await dbFirestore.collection('absen').get();
         return snapshot.docs.map(doc => doc.data());
       } catch (e) {
         console.error("Gagal ambil data:", e);
@@ -379,7 +378,7 @@
 
     async upsert(date, studentIndex, status) {
       const docId = `${date}_${studentIndex}`;
-      const docRef = dbFirestore.collection('attendance').doc(docId);
+      const docRef = dbFirestore.collection('absen').doc(docId);
       if (status === null) return await docRef.delete();
       return await docRef.set({ date, student_index: studentIndex, status });
     }
@@ -388,7 +387,7 @@
       const batch = dbFirestore.batch();
       records.forEach(r => {
         const docId = `${r.date}_${r.student_index}`;
-        const ref = dbFirestore.collection('attendance').doc(docId);
+        const ref = dbFirestore.collection('absen').doc(docId);
         if (r.status === null) batch.delete(ref);
         else batch.set(ref, r);
       });
@@ -402,8 +401,10 @@
     }
 
     async getAllPhotos() {
-      const snapshot = await dbFirestore.collection('photos').get();
-      return snapshot.docs.map(doc => doc.data());
+      try {
+        const snapshot = await dbFirestore.collection('photos').get();
+        return snapshot.docs.map(doc => doc.data());
+      } catch (e) { return []; }
     }
   }
 
@@ -517,7 +518,7 @@
   function setDbStatus(status) {
     const badge = $("#dbStatusBadge");
     const configs = {
-      connected: { cls: 'connected', dotColor: '#22c55e', text: 'Cloud Sync Aktif (Firebase)' },
+      connected: { cls: 'connected', dotColor: '#22c55e', text: 'Cloud Sync Aktif (/absen)' },
       connecting: { cls: 'connecting', dotColor: '#f59e0b', text: 'Menghubungkan Database...' },
       error: { cls: 'error', dotColor: '#ef4444', text: 'Database Error' },
     };
