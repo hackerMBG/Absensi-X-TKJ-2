@@ -332,7 +332,7 @@
 
       <footer class="text-center text-xs text-slate-500 py-4">
         © <span id="yr"></span> SMK YADIKA 13 Tambun Selatan — Sistem Absensi Digital X TKJ 2
-        <span class="ml-2 opacity-60">• Database: Firebase Firestore</span>
+        <span class="ml-2 opacity-60">• Database: Firebase Firestore (Online)</span>
       </footer>
     </main>
   </div>
@@ -347,27 +347,34 @@
   // ============================================================
   
   // ============================================================
-  // DATABASE (Firebase Firestore)
+  // 🔥 FIREBASE CONNECTION (Konektor Database)
   // ============================================================
   const firebaseConfig = {
-    apiKey: "AIzaSy...", // Ganti dengan API Key Anda jika belum benar
-    authDomain: "absensi-tkj.firebaseapp.com",
-    projectId: "absensi-tkj",
-    storageBucket: "absensi-tkj.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdef"
+    apiKey: "AIzaSyDWI-6MYwdrMiL-lx27tK-eBfTgCFLsw3w",
+    authDomain: "project-stem-absensi-x-tkj-2.firebaseapp.com",
+    projectId: "project-stem-absensi-x-tkj-2",
+    storageBucket: "project-stem-absensi-x-tkj-2.firebasestorage.app",
+    messagingSenderId: "914097340887",
+    appId: "1:914097340887:web:84d2c9af1a655e87ae4b92",
+    measurementId: "G-B3TG3K9E7X"
   };
 
+  // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
   const dbFirestore = firebase.firestore();
 
   class AttendanceDB {
     constructor() { this.ready = true; }
-    async init() { return true; }
+    async init() { return true; } // Firebase auto-init
 
     async getAll() {
-      const snapshot = await dbFirestore.collection('attendance').get();
-      return snapshot.docs.map(doc => doc.data());
+      try {
+        const snapshot = await dbFirestore.collection('attendance').get();
+        return snapshot.docs.map(doc => doc.data());
+      } catch (e) {
+        console.error("Gagal ambil data:", e);
+        return [];
+      }
     }
 
     async upsert(date, studentIndex, status) {
@@ -510,8 +517,8 @@
   function setDbStatus(status) {
     const badge = $("#dbStatusBadge");
     const configs = {
-      connected: { cls: 'connected', dotColor: '#22c55e', text: 'Database Terhubung (Firebase Cloud)' },
-      connecting: { cls: 'connecting', dotColor: '#f59e0b', text: 'Menghubungkan Firebase...' },
+      connected: { cls: 'connected', dotColor: '#22c55e', text: 'Cloud Sync Aktif (Firebase)' },
+      connecting: { cls: 'connecting', dotColor: '#f59e0b', text: 'Menghubungkan Database...' },
       error: { cls: 'error', dotColor: '#ef4444', text: 'Database Error' },
     };
     const cfg = configs[status] || configs.connecting;
