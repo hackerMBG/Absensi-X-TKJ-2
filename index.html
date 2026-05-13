@@ -165,7 +165,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 </head>
 <body class="h-full w-full">
 
@@ -961,7 +960,8 @@
   }
 
   // ============================================================
-  // EXPORT EXCEL - BULANAN
+  // EXPORT EXCEL - BULANAN (6 Sheet: Ringkasan, Data Harian,
+  //   Rekap Status, Rekap Kehadiran, Statistik Harian, Analisis)
   // ============================================================
   function exportBulanan() {
     if (!window.XLSX) {
@@ -971,93 +971,204 @@
 
     const monthDates = getRecapMonthDates();
     const [year, month] = recapMonthKey.split('-').map(Number);
-    const monthName = new Date(year, month - 1, 1).toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+    const monthObj = new Date(year, month - 1, 1);
+    const monthName  = monthObj.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+    const monthPlainName = monthObj.toLocaleDateString("id-ID", { month: "long" });
+
+    // ── Style helpers ────────────────────────────────────────────
+    const BORDER = { style: "thin", color: { rgb: "BBBBBB" } };
+    const THIN   = { top: BORDER, bottom: BORDER, left: BORDER, right: BORDER };
+
+    const S_TITLE  = { font: { bold: true, name: "Arial", sz: 12, color: { rgb: "1F3864" } }, alignment: { horizontal: "left", vertical: "center" } };
+    const S_HEADER = { font: { bold: true, name: "Arial", sz: 10 }, fill: { fgColor: { rgb: "D9D9D9" }, patternType: "solid" }, border: THIN, alignment: { horizontal: "center", vertical: "center", wrapText: true } };
+    const S_DATA   = { font: { name: "Arial", sz: 10 }, border: THIN, alignment: { vertical: "center" } };
+    const S_DATA_C = { font: { name: "Arial", sz: 10 }, border: THIN, alignment: { horizontal: "center", vertical: "center" } };
+    const S_PCT    = { font: { name: "Arial", sz: 10 }, border: THIN, alignment: { horizontal: "center", vertical: "center" }, numFmt: "0.00" };
+    const S_AVG    = { font: { bold: true, name: "Arial", sz: 10 }, fill: { fgColor: { rgb: "EBF3FF" }, patternType: "solid" }, border: THIN, alignment: { horizontal: "center", vertical: "center" } };
+    const S_RED    = { font: { bold: true, name: "Arial", sz: 10, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "C00000" }, patternType: "solid" }, border: THIN, alignment: { horizontal: "center", vertical: "center" } };
+    const S_RED_TXT= { font: { bold: true, name: "Arial", sz: 10, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "C00000" }, patternType: "solid" }, border: THIN, alignment: { vertical: "center" } };
+
+    function applyStyle(ws, r, c, sty) {
+      const ref = window.XLSX.utils.encode_cell({ r, c });
+      if (!ws[ref]) ws[ref] = { v: "", t: "s" };
+      ws[ref].s = sty;
+    }
+    function styleRow(ws, rowIdx, styles) {
+      styles.forEach((sty, ci) => applyStyle(ws, rowIdx, ci, sty));
+    }
+    function setPct(ws, r, c) {
+      const ref = window.XLSX.utils.encode_cell({ r, c });
+      if (ws[ref]) ws[ref].z = "0.00";
+    }
 
     const wb = window.XLSX.utils.book_new();
 
-    // ─── Sheet 1: Rekapitulasi Bulanan ────────────────────────
-    const header1 = ["No", "Nama Siswa", "Hadir", "Sakit", "Izin", "Alpa", "Total Dicatat", "% Kehadiran"];
+    // ── SHEET 1: RINGKASAN UMUM ──────────────────────────────────
+    const h1 = ["No","Nama Siswa","Hadir","Sakit","Izin","Alpa","Total Hari","% Kehadiran"];
     const rows1 = STUDENTS.map((name, i) => {
-      let h = 0, s = 0, ii = 0, a = 0;
+      let h=0,s=0,ii=0,a=0;
+      monthDates.forEach(dk => { if(attendanceByDate[dk]){const v=attendanceByDate[dk][i]; if(v==="H")h++;else if(v==="S")s++;else if(v==="I")ii++;else if(v==="A")a++;}});
+      const total=h+s+ii+a; const pct=total?Number((h/total*100).toFixed(2)):0;
+      return [i+1,name,h,s,ii,a,total,pct];
+    });
+    const ws1 = window.XLSX.utils.aoa_to_sheet([["RINGKASAN ABSENSI KELAS X TKJ 2"],["Periode: "+monthName],[],h1,...rows1]);
+    ws1["!cols"] = [{wch:5},{wch:32},{wch:8},{wch:8},{wch:8},{wch:8},{wch:12},{wch:14}];
+    ws1["!autofilter"] = { ref:`A4:H${4+rows1.length}` };
+    applyStyle(ws1,0,0,S_TITLE);
+    styleRow(ws1,3,[S_HEADER,S_HEADER,S_HEADER,S_HEADER,S_HEADER,S_HEADER,S_HEADER,S_HEADER]);
+    rows1.forEach((row,ri) => {
+      const ri2=4+ri;
+      [S_DATA_C,S_DATA,S_DATA_C,S_DATA_C,S_DATA_C,S_DATA_C,S_DATA_C,S_PCT].forEach((st,ci)=>applyStyle(ws1,ri2,ci,st));
+      setPct(ws1,ri2,7);
+    });
+    window.XLSX.utils.book_append_sheet(wb, ws1, "1. Ringkasan");
+
+    // ── SHEET 2: DATA HARIAN ─────────────────────────────────────
+    const h2 = ["No","Nama Siswa",...monthDates.map(dk=>dk.split('-')[2])];
+    const rows2 = STUDENTS.map((name,i) => [i+1,name,...monthDates.map(dk=>(attendanceByDate[dk]?attendanceByDate[dk][i]||"-":"-"))]);
+    const ws2 = window.XLSX.utils.aoa_to_sheet([["LOG ABSENSI HARIAN"],["Periode: "+monthName],[],h2,...rows2]);
+    ws2["!cols"] = [{wch:5},{wch:32},...monthDates.map(()=>({wch:5}))];
+    applyStyle(ws2,0,0,S_TITLE);
+    styleRow(ws2,3,h2.map(()=>S_HEADER));
+    rows2.forEach((_,ri) => { const ri2=4+ri; h2.forEach((_,ci)=>applyStyle(ws2,ri2,ci,ci===1?S_DATA:S_DATA_C)); });
+    window.XLSX.utils.book_append_sheet(wb, ws2, "2. Data Harian");
+
+    // ── SHEET 3: REKAP STATUS ────────────────────────────────────
+    const h3 = ["No","Nama Siswa","Hadir","Sakit","Izin","Alpha"];
+    const rows3 = STUDENTS.map((name,i) => {
+      let h=0,s=0,ii=0,a=0;
+      monthDates.forEach(dk=>{ if(attendanceByDate[dk]){const v=attendanceByDate[dk][i];if(v==="H")h++;else if(v==="S")s++;else if(v==="I")ii++;else if(v==="A")a++;}});
+      return [i+1,name,h,s,ii,a];
+    });
+    const ws3 = window.XLSX.utils.aoa_to_sheet([["REKAP STATUS SISWA"],["Periode: "+monthName],[],h3,...rows3]);
+    ws3["!cols"] = [{wch:5},{wch:32},{wch:10},{wch:10},{wch:10},{wch:10}];
+    ws3["!autofilter"] = { ref:`A4:F${4+rows3.length}` };
+    applyStyle(ws3,0,0,S_TITLE);
+    styleRow(ws3,3,h3.map(()=>S_HEADER));
+    rows3.forEach((_,ri) => { const ri2=4+ri; [S_DATA_C,S_DATA,S_DATA_C,S_DATA_C,S_DATA_C,S_DATA_C].forEach((st,ci)=>applyStyle(ws3,ri2,ci,st)); });
+    window.XLSX.utils.book_append_sheet(wb, ws3, "3. Rekap Status");
+
+    // ── SHEET 4: REKAP KEHADIRAN KOMPREHENSIF ────────────────────
+    const h4 = ["No","Nama Siswa","Jumlah Hadir","Persentase Kehadiran (%)","Jumlah Tidak Hadir (A+S+I)","Persentase Ketidakhadiran (%)","Jumlah Izin","Jumlah Sakit","Jumlah Alpha"];
+    const rows4 = STUDENTS.map((name,i) => {
+      let h=0,s=0,ii=0,a=0;
+      monthDates.forEach(dk=>{ if(attendanceByDate[dk]){const v=attendanceByDate[dk][i];if(v==="H")h++;else if(v==="S")s++;else if(v==="I")ii++;else if(v==="A")a++;}});
+      const total=h+s+ii+a; const absent=s+ii+a;
+      const pctH=total?Number((h/total*100).toFixed(2)):0;
+      const pctA=total?Number((absent/total*100).toFixed(2)):0;
+      return [i+1,name,h,pctH,absent,pctA,ii,s,a];
+    });
+    const ws4 = window.XLSX.utils.aoa_to_sheet([["REKAP KEHADIRAN KOMPREHENSIF"],["Periode: "+monthName],[],h4,...rows4]);
+    ws4["!cols"] = [{wch:5},{wch:32},{wch:14},{wch:26},{wch:26},{wch:28},{wch:14},{wch:14},{wch:14}];
+    ws4["!autofilter"] = { ref:`A4:I${4+rows4.length}` };
+    applyStyle(ws4,0,0,S_TITLE);
+    styleRow(ws4,3,h4.map(()=>S_HEADER));
+    rows4.forEach((row,ri) => {
+      const ri2=4+ri; const alpha=row[8]; const pctH=row[3];
+      const isAlert = alpha>3 || pctH<85;
+      row.forEach((_,ci) => {
+        if (isAlert) { applyStyle(ws4,ri2,ci,ci===1?S_RED_TXT:S_RED); }
+        else if (ci===1) { applyStyle(ws4,ri2,ci,S_DATA); }
+        else if (ci===3||ci===5) { applyStyle(ws4,ri2,ci,S_PCT); setPct(ws4,ri2,ci); }
+        else { applyStyle(ws4,ri2,ci,S_DATA_C); }
+      });
+    });
+    window.XLSX.utils.book_append_sheet(wb, ws4, "4. Rekap Kehadiran");
+
+    // ── SHEET 5: STATISTIK HARIAN ────────────────────────────────
+    const statsDays = ["Senin","Selasa","Rabu","Kamis","Jumat"];
+    const h5 = ["Hari","Jumlah Hadir","Jumlah Izin","Jumlah Sakit","Jumlah Alpha","Total Absensi","Persentase Hadir (%)","Persentase Tidak Hadir (%)"];
+    const dailyStats = statsDays.map(dayName => {
+      let h=0,ii=0,s=0,a=0;
       monthDates.forEach(dk => {
-        if (attendanceByDate[dk]) {
-          const v = attendanceByDate[dk][i];
-          if (v === "H") h++; else if (v === "S") s++; else if (v === "I") ii++; else if (v === "A") a++;
+        if(DAY_NAMES[getDateFromKey(dk).getDay()]===dayName && attendanceByDate[dk]) {
+          attendanceByDate[dk].forEach(v=>{if(v==="H")h++;else if(v==="I")ii++;else if(v==="S")s++;else if(v==="A")a++;});
         }
       });
-      const total = h + s + ii + a;
-      const pct = total ? Math.round((h / total) * 100) : 0;
-      return [i + 1, name, h, s, ii, a, total, pct + "%"];
+      const total=h+ii+s+a;
+      const pctH=total?Number((h/total*100).toFixed(2)):0;
+      const pctA=total?Number(((ii+s+a)/total*100).toFixed(2)):0;
+      return [dayName,h,ii,s,a,total,pctH,pctA];
+    });
+    const avgH5 = Number((dailyStats.reduce((acc,r)=>acc+r[6],0)/dailyStats.length).toFixed(2));
+    const avgA5 = Number((dailyStats.reduce((acc,r)=>acc+r[7],0)/dailyStats.length).toFixed(2));
+    const avgRow5 = ["TOTAL RATA-RATA","","","","","",avgH5,avgA5];
+    const ws5 = window.XLSX.utils.aoa_to_sheet([["STATISTIK HARIAN (SENIN–JUMAT)"],["Periode: "+monthName],[],h5,...dailyStats,avgRow5]);
+    ws5["!cols"] = [{wch:16},{wch:14},{wch:14},{wch:14},{wch:14},{wch:16},{wch:24},{wch:26}];
+    ws5["!autofilter"] = { ref:`A4:H${4+dailyStats.length}` };
+    applyStyle(ws5,0,0,S_TITLE);
+    styleRow(ws5,3,h5.map(()=>S_HEADER));
+    dailyStats.forEach((_,ri) => {
+      const ri2=4+ri;
+      [S_DATA_C,S_DATA_C,S_DATA_C,S_DATA_C,S_DATA_C,S_DATA_C,S_PCT,S_PCT].forEach((st,ci)=>{ applyStyle(ws5,ri2,ci,st); if(ci>=6)setPct(ws5,ri2,ci); });
+    });
+    const avgRowIdx5 = 4+dailyStats.length;
+    h5.forEach((_,ci)=>applyStyle(ws5,avgRowIdx5,ci,S_AVG));
+    [6,7].forEach(ci=>setPct(ws5,avgRowIdx5,ci));
+    window.XLSX.utils.book_append_sheet(wb, ws5, "5. Statistik Harian");
+
+    // ── SHEET 6: ANALISIS POLA & EVALUASI ────────────────────────
+    const h6a = ["Nama Siswa","Jumlah Absen","Hari/Frekuensi","Pola Ketidakhadiran","Identifikasi Alasan/Indikasi"];
+    const rows6 = STUDENTS.map((name,i) => {
+      let totalAbsen=0; const dc={"Senin":0,"Selasa":0,"Rabu":0,"Kamis":0,"Jumat":0};
+      monthDates.forEach(dk=>{ if(attendanceByDate[dk]&&attendanceByDate[dk][i]&&attendanceByDate[dk][i]!=="H"){totalAbsen++;const dn=DAY_NAMES[getDateFromKey(dk).getDay()];if(dc[dn]!==undefined)dc[dn]++;} });
+      const topDay=Object.keys(dc).reduce((a,b)=>dc[a]>dc[b]?a:b);
+      const pattern=totalAbsen>0?"Sering Absen hari "+topDay:"Teratur";
+      let indication="-";
+      if(totalAbsen>0){
+        if(topDay==="Senin")indication="Kecenderungan sulit transisi hari libur";
+        else if(topDay==="Jumat")indication="Kecenderungan libur lebih awal";
+        else if(topDay==="Rabu")indication="Titik tengah minggu, kelelahan akumulatif";
+        else indication="Faktor kesehatan/keperluan mendadak";
+      }
+      return [name,totalAbsen,topDay,pattern,indication];
+    });
+    const h6b = ["Kategori Hari","Daftar Siswa Terkait","Analisis Penyebab Potensial"];
+    const focusRows = statsDays.map(day => {
+      const listSiswa = STUDENTS.filter((_,i) => {
+        let cnt=0;
+        monthDates.forEach(dk=>{ if(DAY_NAMES[getDateFromKey(dk).getDay()]===day&&attendanceByDate[dk]&&attendanceByDate[dk][i]&&attendanceByDate[dk][i]!=="H")cnt++; });
+        return cnt>1;
+      }).slice(0,5).join(", ");
+      let analysis="Analisis umum ketidakhadiran";
+      if(day==="Senin")analysis="Kecenderungan sulit transisi hari libur";
+      else if(day==="Jumat")analysis="Kecenderungan libur lebih awal";
+      else if(day==="Rabu")analysis="Titik tengah minggu, kelelahan akumulatif";
+      return ["Fokus Hari "+day, listSiswa||"-", analysis];
     });
 
-    // Total baris bawah
-    const totals = rows1.reduce((acc, row) => {
-      acc[0] = (acc[0] || 0) + row[2]; // H
-      acc[1] = (acc[1] || 0) + row[3]; // S
-      acc[2] = (acc[2] || 0) + row[4]; // I
-      acc[3] = (acc[3] || 0) + row[5]; // A
-      return acc;
-    }, {});
-
-    const ws1Data = [
-      ["REKAPITULASI BULANAN - SMK YADIKA 13"],
-      ["Kelas: X TKJ 2", "", "Wali Kelas: Engglin Angela T.H., S.Kom"],
-      [`Periode: ${monthName}`, "", `Total Hari: ${monthDates.length}`],
+    const focusTitleIdx = 4+rows6.length+1;
+    const ws6 = window.XLSX.utils.aoa_to_sheet([
+      ["ANALISIS POLA & EVALUASI KETIDAKHADIRAN"],["Periode: "+monthName],[],
+      h6a,...rows6,
       [],
-      header1,
-      ...rows1,
-      [],
-      ["", "TOTAL", totals[0] || 0, totals[1] || 0, totals[2] || 0, totals[3] || 0]
-    ];
-    const ws1 = window.XLSX.utils.aoa_to_sheet(ws1Data);
-    ws1["!cols"] = [{ wch: 5 }, { wch: 35 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 14 }, { wch: 14 }];
-    window.XLSX.utils.book_append_sheet(wb, ws1, "Rekapitulasi Bulanan");
-
-    // ─── Sheet 2: Detail per Tanggal (Pivot) ─────────────────
-    const pivotDayLabels = monthDates.map(dk => getDateFromKey(dk).getDate());
-    const pivotHeader = ["No", "Nama Siswa", ...pivotDayLabels];
-    const pivotRows = STUDENTS.map((name, i) => [
-      i + 1,
-      name,
-      ...monthDates.map(dk => (attendanceByDate[dk] && attendanceByDate[dk][i]) || "-")
+      ["ANALISIS FOKUS KETIDAKHADIRAN BERDASARKAN HARI"],
+      h6b,...focusRows
     ]);
+    ws6["!cols"] = [{wch:30},{wch:14},{wch:18},{wch:32},{wch:48}];
+    ws6["!autofilter"] = { ref:`A4:E${4+rows6.length}` };
+    applyStyle(ws6,0,0,S_TITLE);
+    styleRow(ws6,3,h6a.map(()=>S_HEADER));
+    rows6.forEach((_,ri) => {
+      const ri2=4+ri;
+      [S_DATA,S_DATA_C,S_DATA_C,S_DATA,S_DATA].forEach((st,ci)=>applyStyle(ws6,ri2,ci,st));
+    });
+    applyStyle(ws6,focusTitleIdx,0,S_TITLE);
+    styleRow(ws6,focusTitleIdx+1,h6b.map(()=>S_HEADER));
+    focusRows.forEach((_,ri) => {
+      const ri2=focusTitleIdx+2+ri;
+      [S_DATA_C,S_DATA,S_DATA].forEach((st,ci)=>applyStyle(ws6,ri2,ci,st));
+    });
+    window.XLSX.utils.book_append_sheet(wb, ws6, "6. Analisis Pola");
 
-    // Baris hitungan per tanggal
-    const countRow = ["", "Total Hadir", ...monthDates.map(dk =>
-      (attendanceByDate[dk] || []).filter(v => v === "H").length
-    )];
-
-    const ws2Data = [
-      [`DETAIL ABSENSI PER TANGGAL - ${monthName}`],
-      [],
-      pivotHeader,
-      ...pivotRows,
-      [],
-      countRow
-    ];
-    const ws2 = window.XLSX.utils.aoa_to_sheet(ws2Data);
-    ws2["!cols"] = [{ wch: 5 }, { wch: 35 }, ...monthDates.map(() => ({ wch: 5 }))];
-    window.XLSX.utils.book_append_sheet(wb, ws2, "Detail Per Tanggal");
-
-    // ─── Sheet 3: Siswa Perlu Perhatian (<80%) ───────────────
-    const alertRows = rows1.filter(row => {
-      const pct = parseInt(row[7]);
-      return !isNaN(pct) && pct < 80 && row[6] > 0;
-    }).sort((a, b) => parseInt(a[7]) - parseInt(b[7]));
-
-    const ws3Data = [
-      [`SISWA PERLU PERHATIAN (Kehadiran < 80%) - ${monthName}`],
-      [],
-      header1,
-      ...alertRows
-    ];
-    const ws3 = window.XLSX.utils.aoa_to_sheet(ws3Data);
-    ws3["!cols"] = [{ wch: 5 }, { wch: 35 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 14 }, { wch: 14 }];
-    window.XLSX.utils.book_append_sheet(wb, ws3, "Perlu Perhatian");
-
-    window.XLSX.writeFile(wb, `Rekap_Bulanan_${recapMonthKey}.xlsx`);
-    toast(`✅ Export Excel bulanan berhasil! (${alertRows.length} siswa < 80%)`, "success");
+    // ── Tulis file ───────────────────────────────────────────────
+    const fileName = `Rekap_absensi ${monthPlainName} ${year}.xlsx`;
+    window.XLSX.writeFile(wb, fileName, { cellStyles: true });
+    toast(`✅ Berhasil! File "${fileName}" siap diunduh.`, "success");
   }
+  // === END exportBulanan ===
+  // (kode lama dihapus untuk menghindari duplikasi workbook)
+
 
   // ============================================================
   // NAVIGASI TANGGAL
@@ -1219,4 +1330,4 @@
   })();
   </script>
 </body>
-</html>  
+</html>
