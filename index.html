@@ -159,6 +159,13 @@
     }
 
 
+  
+    /* Auth & Logo Styles */
+    #loginOverlay { transition: opacity 0.4s ease; }
+    .status-btn.view-only { pointer-events: none !important; cursor: default !important; opacity: 0.8; }
+    #adminLogoHint { position: absolute; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; }
+    #schoolLogoContainer:hover #adminLogoHint { opacity: 1; }
+
   </style>
 
   <!-- Firebase SDK -->
@@ -167,6 +174,32 @@
 
 </head>
 <body class="h-full w-full">
+
+  <!-- Overlay Login -->
+  <div id="loginOverlay" class="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/95 backdrop-blur-md">
+    <div class="w-full max-w-md p-8 bg-white rounded-3xl shadow-2xl border border-slate-200 m-4">
+      <div class="text-center mb-8">
+        <div class="w-20 h-20 bg-indigo-600 rounded-2xl mx-auto mb-4 flex items-center justify-center text-white shadow-xl">
+          <i data-lucide="lock" class="w-10 h-10"></i>
+        </div>
+        <h2 class="font-display text-2xl font-bold text-slate-900">Portal Absensi X TKJ 2</h2>
+        <p class="text-slate-500 text-sm mt-2">Masuk menggunakan nama lengkap Anda</p>
+      </div>
+      <div class="space-y-5">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 ml-1">Nama Lengkap</label>
+          <input type="text" id="username" placeholder="Contoh: Reno Setiawan" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 ml-1">Password</label>
+          <input type="password" id="password" placeholder="Default: 123456" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+        </div>
+        <button id="btnLogin" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all transform active:scale-95">Masuk ke Sistem</button>
+      </div>
+      <p class="mt-8 text-center text-[10px] text-slate-400 font-medium italic">Khusus Siswa & Guru X TKJ 2 - SMK Yadika 13</p>
+    </div>
+  </div>
+
 
   <div class="h-full w-full overflow-auto">
     <main class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -217,12 +250,12 @@
           <span class="chip"><span class="dot" style="background:#ef4444"></span>A - Alpa</span>
         </div>
         <div class="flex gap-2 flex-wrap">
-          <button id="btnFillAll" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm transition">
+          <div id="adminActions" class="hidden flex gap-2"><button id="btnFillAll" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm transition">
             <i data-lucide="check-check" class="w-4 h-4"></i> Tandai Semua Hadir
           </button>
           <button id="btnResetToday" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold transition">
             <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset Hari Ini
-          </button>
+          </button></div>
         </div>
       </section>
 
@@ -358,9 +391,122 @@
     appId: "1:914097340887:web:84d2c9af1a655e87ae4b92",
     measurementId: "G-B3TG3K9E7X"
   };
+  // Handled above
+  const dbFirestore = firebase.firestore();
+
+  // ============================================================
+  // 🔥 SISTEM LOGIN & PERMISSIONS
+  // ============================================================
+  const ADMIN_LIST = ['Reno Setiawan', 'Umar Rafa Setiawan', 'Muhammad Reza', 'Engglin Angela Theresia Humbas, S. Kom'];
+  let currentUser = null;
+
+  function applyPermissions() {
+    const isAdmin = currentUser.role === 'admin';
+    const adminActionEl = document.getElementById('adminActions');
+    const logoHint = document.getElementById('adminLogoHint');
+    
+    if (adminActionEl) isAdmin ? adminActionEl.classList.remove('hidden') : adminActionEl.classList.add('hidden');
+    if (logoHint) isAdmin ? logoHint.classList.remove('hidden') : logoHint.classList.add('hidden');
+    
+    document.getElementById('userNameBadge').textContent = currentUser.name + " (" + currentUser.role.toUpperCase() + ")";
+    
+    // Disable interaction if not admin (apply to existing status buttons)
+    if (!isAdmin) {
+      const style = document.createElement('style');
+      style.innerHTML = '.status-btn { cursor: default !important; pointer-events: none !important; opacity: 0.8 !important; }';
+      document.head.appendChild(style);
+    }
+  }
+
+  document.getElementById('btnLogin').onclick = () => {
+    const user = document.getElementById('username').value.trim();
+    const pass = document.getElementById('password').value;
+    if (!user || !pass) return showToast("Lengkapi form login!", "error");
+
+    const isStudent = STUDENTS.includes(user);
+    const isTeacher = user === "Engglin Angela Theresia Humbas, S. Kom";
+
+    if ((isStudent || isTeacher) && pass === "123456") {
+      currentUser = {
+        name: user,
+        role: ADMIN_LIST.includes(user) ? 'admin' : 'siswa'
+      };
+      localStorage.setItem('absensi_session', JSON.stringify(currentUser));
+      document.getElementById('loginOverlay').classList.add('hidden');
+      applyPermissions();
+      loadSettings();
+      showToast("Selamat datang, " + user.split(' ')[0]);
+    } else {
+      showToast("Nama atau Password salah!", "error");
+    }
+  };
+
+  document.getElementById('btnLogout').onclick = () => {
+    localStorage.removeItem('absensi_session');
+    location.reload();
+  };
+
+  // Custom Logo Logic
+  document.getElementById('schoolLogoContainer').onclick = () => {
+    if (currentUser && currentUser.role === 'admin') document.getElementById('logoUploadInput').click();
+  };
+
+  document.getElementById('logoUploadInput').onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const base64 = ev.target.result;
+      applyLogoUI(base64);
+      try {
+        await dbFirestore.collection('settings').doc('config').set({ schoolLogo: base64 }, { merge: true });
+        showToast("Logo berhasil diperbarui!");
+      } catch (err) { showToast("Gagal simpan ke cloud", "error"); }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  function applyLogoUI(src) {
+    if (!src) return;
+    const placeholder = document.getElementById('logoPlaceholder');
+    if(placeholder) placeholder.classList.add('hidden');
+    const img = document.getElementById('schoolLogoImg');
+    if(img) {
+        img.src = src;
+        img.classList.remove('hidden');
+    }
+  }
+
+  async function loadSettings() {
+    try {
+      const doc = await dbFirestore.collection('settings').doc('config').get();
+      if (doc.exists && doc.data().schoolLogo) applyLogoUI(doc.data().schoolLogo);
+    } catch (e) { console.warn("Settings failed to load", e); }
+  }
+
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.className = 'toast ' + type + ' show';
+    t.innerHTML = '<span>' + msg + '</span>';
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function checkAuth() {
+    const session = localStorage.getItem('absensi_session');
+    if (session) {
+      currentUser = JSON.parse(session);
+      document.getElementById('loginOverlay').classList.add('hidden');
+      applyPermissions();
+      loadSettings();
+      return true;
+    }
+    return false;
+  }
+
 
   // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
+  // Handled above
   const dbFirestore = firebase.firestore();
 
   class AttendanceDB {
@@ -1177,19 +1323,19 @@
     const d = getDateFromKey(currentDateKey);
     d.setDate(d.getDate() - 1);
     currentDateKey = getDateKey(d);
-    refreshAll();
+    if(checkAuth()) refreshAll();
   });
 
   $("#btnNextDay").addEventListener("click", () => {
     const d = getDateFromKey(currentDateKey);
     d.setDate(d.getDate() + 1);
     currentDateKey = getDateKey(d);
-    refreshAll();
+    if(checkAuth()) refreshAll();
   });
 
   $("#dateInput").addEventListener("change", () => {
     const val = $("#dateInput").value;
-    if (val) { currentDateKey = val; refreshAll(); }
+    if (val) { currentDateKey = val; if(checkAuth()) refreshAll(); }
   });
 
   $("#monthInput").addEventListener("change", () => {
@@ -1197,7 +1343,7 @@
     if (val) {
       const [year, month] = val.split("-").map(Number);
       currentDateKey = getDateKey(new Date(year, month - 1, 1));
-      refreshAll();
+      if(checkAuth()) refreshAll();
     }
   });
 
@@ -1285,7 +1431,7 @@
   // ============================================================
   // Render UI langsung tanpa menunggu database
   document.getElementById("yr").textContent = new Date().getFullYear();
-  refreshAll();
+  if(checkAuth()) refreshAll();
 
   // Load database di background (tidak memblokir tampilan)
   (async () => {
@@ -1321,7 +1467,7 @@
       console.log(`✅ Database dimuat: ${records.length} record absensi`);
 
       // Refresh UI setelah data DB masuk
-      if (records.length > 0) refreshAll();
+      if (records.length > 0) if(checkAuth()) refreshAll();
 
     } catch (err) {
       console.error("Gagal inisialisasi IndexedDB:", err);
@@ -1329,5 +1475,5 @@
     }
   })();
   </script>
-</body>
+<input type="file" id="logoUploadInput" accept="image/*" class="hidden"></body>
 </html>
