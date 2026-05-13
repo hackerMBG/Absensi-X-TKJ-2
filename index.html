@@ -192,7 +192,7 @@
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 ml-1">Password</label>
-          <input type="password" id="password" placeholder="Default: 123456" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+          <input type="password" id="password" placeholder="Siswa: 123456 | Admin: 654321" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
         </div>
         <button id="btnLogin" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all transform active:scale-95">Masuk ke Sistem</button>
       </div>
@@ -413,8 +413,12 @@
     // Disable interaction if not admin (apply to existing status buttons)
     if (!isAdmin) {
       const style = document.createElement('style');
+      style.id = 'viewOnlyStyle';
       style.innerHTML = '.status-btn { cursor: default !important; pointer-events: none !important; opacity: 0.8 !important; }';
       document.head.appendChild(style);
+    } else {
+      const existingStyle = document.getElementById('viewOnlyStyle');
+      if (existingStyle) existingStyle.remove();
     }
   }
 
@@ -425,17 +429,23 @@
 
     const isStudent = STUDENTS.includes(user);
     const isTeacher = user === "Engglin Angela Theresia Humbas, S. Kom";
+    const isAdmin = ADMIN_LIST.includes(user);
+    
+    // VALIDASI PASSWORD
+    // Admin: 654321, Siswa: 123456
+    const requiredPass = isAdmin ? "654321" : "123456";
 
-    if ((isStudent || isTeacher) && pass === "123456") {
+    if ((isStudent || isTeacher) && pass === requiredPass) {
       currentUser = {
         name: user,
-        role: ADMIN_LIST.includes(user) ? 'admin' : 'siswa'
+        role: isAdmin ? 'admin' : 'siswa'
       };
       localStorage.setItem('absensi_session', JSON.stringify(currentUser));
       document.getElementById('loginOverlay').classList.add('hidden');
       applyPermissions();
       loadSettings();
       showToast("Selamat datang, " + user.split(' ')[0]);
+      if(checkAuth()) refreshAll(); lucide.createIcons(); // Trigger data load
     } else {
       showToast("Nama atau Password salah!", "error");
     }
@@ -1323,19 +1333,19 @@
     const d = getDateFromKey(currentDateKey);
     d.setDate(d.getDate() - 1);
     currentDateKey = getDateKey(d);
-    if(checkAuth()) refreshAll();
+    if(checkAuth()) refreshAll(); lucide.createIcons();
   });
 
   $("#btnNextDay").addEventListener("click", () => {
     const d = getDateFromKey(currentDateKey);
     d.setDate(d.getDate() + 1);
     currentDateKey = getDateKey(d);
-    if(checkAuth()) refreshAll();
+    if(checkAuth()) refreshAll(); lucide.createIcons();
   });
 
   $("#dateInput").addEventListener("change", () => {
     const val = $("#dateInput").value;
-    if (val) { currentDateKey = val; if(checkAuth()) refreshAll(); }
+    if (val) { currentDateKey = val; if(checkAuth()) refreshAll(); lucide.createIcons(); }
   });
 
   $("#monthInput").addEventListener("change", () => {
@@ -1343,7 +1353,7 @@
     if (val) {
       const [year, month] = val.split("-").map(Number);
       currentDateKey = getDateKey(new Date(year, month - 1, 1));
-      if(checkAuth()) refreshAll();
+      if(checkAuth()) refreshAll(); lucide.createIcons();
     }
   });
 
@@ -1431,7 +1441,7 @@
   // ============================================================
   // Render UI langsung tanpa menunggu database
   document.getElementById("yr").textContent = new Date().getFullYear();
-  if(checkAuth()) refreshAll();
+  if(checkAuth()) refreshAll(); lucide.createIcons();
 
   // Load database di background (tidak memblokir tampilan)
   (async () => {
@@ -1467,7 +1477,7 @@
       console.log(`✅ Database dimuat: ${records.length} record absensi`);
 
       // Refresh UI setelah data DB masuk
-      if (records.length > 0) if(checkAuth()) refreshAll();
+      if (records.length > 0) if(checkAuth()) refreshAll(); lucide.createIcons();
 
     } catch (err) {
       console.error("Gagal inisialisasi IndexedDB:", err);
