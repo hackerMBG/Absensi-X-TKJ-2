@@ -96,7 +96,7 @@
       border-radius: 16px;
       padding: 16px 18px;
       color: #fff;
-      position: relative overflow: hidden;
+      position: relative; overflow: hidden;
     }
     .stat-card::after{
       content:""; position:absolute; right:-30px; top:-30px;
@@ -330,7 +330,7 @@
                 <th class="text-center">Sakit</th>
                 <th class="text-center">Izin</th>
                 <th class="text-center">Alpa</th>
-                <th class="text-center pr-5">% Hadir</th>
+                <th class="text-center pr-5">%</th>
               </tr>
             </thead>
             <tbody id="monthlyBody"></tbody>
@@ -351,7 +351,7 @@
 
   <script>
   // ============================================================
-  // 🔥 FIREBASE CONNECTION (Konektor Database)
+  // DATABASE (IndexedDB) & FIREBASE CONNECTION
   // ============================================================
   const firebaseConfig = {
     apiKey: "AIzaSyDWI-6MYwdrMiL-lx27tK-eBfTgCFLsw3w",
@@ -363,7 +363,6 @@
     measurementId: "G-B3TG3K9E7X"
   };
 
-  // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
   const dbFirestore = firebase.firestore();
 
@@ -433,7 +432,6 @@
   const DAY_NAMES = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
   const STATUSES = ["H","S","I","A"];
 
-  // State: attendanceByDate[dateString][studentIndex] = "H"|"S"|"I"|"A"|null
   const attendanceByDate = {};
   const photos = STUDENTS.map(() => null);
 
@@ -571,7 +569,7 @@
   }
 
   // ============================================================
-  // EVENT LISTENER
+  // STATUS CLICK HANDLER
   // ============================================================
   $("#attBody").addEventListener("click", async (e) => {
     const btn = e.target.closest(".status-btn");
@@ -890,13 +888,12 @@
     }
 
     const attendance = getDateAttendance();
-    const displayDate = formatDate(getDateFromKey(currentDateKey)); 
+    const displayDate = formatDate(getDateFromKey(currentDateKey));
     
-    // Setup format tabel harian rapi
     const wsData = [
       ["REKAPITULASI ABSENSI HARIAN - SMK YADIKA 13"],
       ["Kelas: X TKJ 2", "", "Wali Kelas: Engglin Angela T.H., S.Kom"],
-      [`Periode Ekspor: ${displayDate}`],
+      [`Periode: ${displayDate}`],
       [],
       ["No", "Nama Siswa", "Hari, Tanggal, Tahun", "Keterangan"]
     ];
@@ -915,10 +912,7 @@
     const wb = window.XLSX.utils.book_new();
     const ws = window.XLSX.utils.aoa_to_sheet(wsData);
     
-    // Layout columns
     ws["!cols"] = [{ wch: 5 }, { wch: 35 }, { wch: 28 }, { wch: 15 }];
-    
-    // Merge & Styling dasar (SheetJS Basic Header)
     ws["!merges"] = [
       { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },
       { s: { r: 1, c: 0 }, e: { r: 1, c: 1 } },
@@ -974,26 +968,22 @@
     const wb = window.XLSX.utils.book_new();
 
     // ── SHEET 1: RINGKASAN UMUM ──────────────────────────────────
-    const h1 = ["No","Nama Siswa","Hadir","Sakit","Izin","Alpa","Total Hari","% Hadir","% Sakit","% Izin","% Alpha"];
+    const h1 = ["No","Nama Siswa","Hadir","Sakit","Izin","Alpa","Total Hari","% Kehadiran"];
     const rows1 = STUDENTS.map((name, i) => {
       let h=0,s=0,ii=0,a=0;
       monthDates.forEach(dk => { if(attendanceByDate[dk]){const v=attendanceByDate[dk][i]; if(v==="H")h++;else if(v==="S")s++;else if(v==="I")ii++;else if(v==="A")a++;}});
-      const total=h+s+ii+a; 
-      const pctH=total?Number((h/total*100).toFixed(2)):0;
-      const pctS=total?Number((s/total*100).toFixed(2)):0;
-      const pctI=total?Number((ii/total*100).toFixed(2)):0;
-      const pctA=total?Number((a/total*100).toFixed(2)):0;
-      return [i+1,name,h,s,ii,a,total,pctH,pctS,pctI,pctA];
+      const total=h+s+ii+a; const pct=total?Number((h/total*100).toFixed(2)):0;
+      return [i+1,name,h,s,ii,a,total,pct];
     });
     const ws1 = window.XLSX.utils.aoa_to_sheet([["RINGKASAN ABSENSI KELAS X TKJ 2"],["Periode: "+monthName],[],h1,...rows1]);
-    ws1["!cols"] = [{wch:5},{wch:32},{wch:8},{wch:8},{wch:8},{wch:8},{wch:12},{wch:12},{wch:12},{wch:12},{wch:12}];
-    ws1["!autofilter"] = { ref:`A4:K${4+rows1.length}` };
+    ws1["!cols"] = [{wch:5},{wch:32},{wch:8},{wch:8},{wch:8},{wch:8},{wch:12},{wch:14}];
+    ws1["!autofilter"] = { ref:`A4:H${4+rows1.length}` };
     applyStyle(ws1,0,0,S_TITLE);
-    styleRow(ws1,3,Array(11).fill(S_HEADER));
+    styleRow(ws1,3,Array(8).fill(S_HEADER));
     rows1.forEach((row,ri) => {
       const ri2=4+ri;
-      [S_DATA_C,S_DATA,S_DATA_C,S_DATA_C,S_DATA_C,S_DATA_C,S_DATA_C,S_PCT,S_PCT,S_PCT,S_PCT].forEach((st,ci)=>applyStyle(ws1,ri2,ci,st));
-      [7,8,9,10].forEach(col=>setPct(ws1,ri2,col));
+      [S_DATA_C,S_DATA,S_DATA_C,S_DATA_C,S_DATA_C,S_DATA_C,S_DATA_C,S_PCT].forEach((st,ci)=>applyStyle(ws1,ri2,ci,st));
+      setPct(ws1,ri2,7);
     });
     window.XLSX.utils.book_append_sheet(wb, ws1, "1. Ringkasan");
 
@@ -1008,53 +998,42 @@
     window.XLSX.utils.book_append_sheet(wb, ws2, "2. Data Harian");
 
     // ── SHEET 3: REKAP STATUS ────────────────────────────────────
-    const h3 = ["No","Nama Siswa","Hadir","Sakit","Izin","Alpha","% Sakit","% Izin","% Alpha"];
+    const h3 = ["No","Nama Siswa","Hadir","Sakit","Izin","Alpha"];
     const rows3 = STUDENTS.map((name,i) => {
       let h=0,s=0,ii=0,a=0;
       monthDates.forEach(dk=>{ if(attendanceByDate[dk]){const v=attendanceByDate[dk][i];if(v==="H")h++;else if(v==="S")s++;else if(v==="I")ii++;else if(v==="A")a++;}});
-      const total=h+s+ii+a; 
-      const pctS=total?Number((s/total*100).toFixed(2)):0;
-      const pctI=total?Number((ii/total*100).toFixed(2)):0;
-      const pctA=total?Number((a/total*100).toFixed(2)):0;
-      return [i+1,name,h,s,ii,a,pctS,pctI,pctA];
+      return [i+1,name,h,s,ii,a];
     });
     const ws3 = window.XLSX.utils.aoa_to_sheet([["REKAP STATUS SISWA"],["Periode: "+monthName],[],h3,...rows3]);
-    ws3["!cols"] = [{wch:5},{wch:32},{wch:10},{wch:10},{wch:10},{wch:10},{wch:12},{wch:12},{wch:12}];
-    ws3["!autofilter"] = { ref:`A4:I${4+rows3.length}` };
+    ws3["!cols"] = [{wch:5},{wch:32},{wch:10},{wch:10},{wch:10},{wch:10}];
+    ws3["!autofilter"] = { ref:`A4:F${4+rows3.length}` };
     applyStyle(ws3,0,0,S_TITLE);
     styleRow(ws3,3,h3.map(()=>S_HEADER));
-    rows3.forEach((_,ri) => { 
-      const ri2=4+ri; 
-      [S_DATA_C,S_DATA,S_DATA_C,S_DATA_C,S_DATA_C,S_DATA_C,S_PCT,S_PCT,S_PCT].forEach((st,ci)=>applyStyle(ws3,ri2,ci,st)); 
-      [6,7,8].forEach(col=>setPct(ws3,ri2,col));
-    });
+    rows3.forEach((_,ri) => { const ri2=4+ri; [S_DATA_C,S_DATA,S_DATA_C,S_DATA_C,S_DATA_C,S_DATA_C].forEach((st,ci)=>applyStyle(ws3,ri2,ci,st)); });
     window.XLSX.utils.book_append_sheet(wb, ws3, "3. Rekap Status");
 
-    // ── SHEET 4: REKAP KEHADIRAN KOMPREHENSIF ────────────────────
-    const h4 = ["No","Nama Siswa","Jumlah Hadir","Persentase Kehadiran (%)","Jumlah Tidak Hadir (A+S+I)","Persentase Ketidakhadiran (%)","% Izin","% Sakit","% Alpha"];
+    // ── SHEET 4: REKAP KEHADIRAN KOMPREHENSIF (TELAH DIREVISI) ───
+    const h4 = ["No","Nama Siswa","Jumlah Hadir","Persentase Kehadiran (%)","Persentase Ketidakhadiran (%)","Jumlah Izin","Jumlah Sakit","Jumlah Alpha"];
     const rows4 = STUDENTS.map((name,i) => {
       let h=0,s=0,ii=0,a=0;
       monthDates.forEach(dk=>{ if(attendanceByDate[dk]){const v=attendanceByDate[dk][i];if(v==="H")h++;else if(v==="S")s++;else if(v==="I")ii++;else if(v==="A")a++;}});
       const total=h+s+ii+a; const absent=s+ii+a;
       const pctH=total?Number((h/total*100).toFixed(2)):0;
       const pctA_Total=total?Number((absent/total*100).toFixed(2)):0;
-      const pctS=total?Number((s/total*100).toFixed(2)):0;
-      const pctI=total?Number((ii/total*100).toFixed(2)):0;
-      const pctA=total?Number((a/total*100).toFixed(2)):0;
-      return [i+1,name,h,pctH,absent,pctA_Total,pctI,pctS,pctA];
+      return [i+1,name,h,pctH,pctA_Total,ii,s,a];
     });
     const ws4 = window.XLSX.utils.aoa_to_sheet([["REKAP KEHADIRAN KOMPREHENSIF"],["Periode: "+monthName],[],h4,...rows4]);
-    ws4["!cols"] = [{wch:5},{wch:32},{wch:14},{wch:26},{wch:26},{wch:28},{wch:14},{wch:14},{wch:14}];
-    ws4["!autofilter"] = { ref:`A4:I${4+rows4.length}` };
+    ws4["!cols"] = [{wch:5},{wch:32},{wch:14},{wch:26},{wch:28},{wch:14},{wch:14},{wch:14}];
+    ws4["!autofilter"] = { ref:`A4:H${4+rows4.length}` };
     applyStyle(ws4,0,0,S_TITLE);
     styleRow(ws4,3,h4.map(()=>S_HEADER));
     rows4.forEach((row,ri) => {
-      const ri2=4+ri; const alphaPct=row[8]; const pctH=row[3];
-      const isAlert = alphaPct>15 || pctH<85; // Menyorot berdasarkan metrik
+      const ri2=4+ri; const alpha=row[7]; const pctH=row[3];
+      const isAlert = alpha>3 || pctH<85; // Menyorot berdasarkan metrik
       row.forEach((_,ci) => {
         if (isAlert) { applyStyle(ws4,ri2,ci,ci===1?S_RED_TXT:S_RED); }
         else if (ci===1) { applyStyle(ws4,ri2,ci,S_DATA); }
-        else if (ci>=3 && ci!==4) { applyStyle(ws4,ri2,ci,S_PCT); setPct(ws4,ri2,ci); }
+        else if (ci===3||ci===4) { applyStyle(ws4,ri2,ci,S_PCT); setPct(ws4,ri2,ci); }
         else { applyStyle(ws4,ri2,ci,S_DATA_C); }
       });
     });
@@ -1062,7 +1041,7 @@
 
     // ── SHEET 5: STATISTIK HARIAN ────────────────────────────────
     const statsDays = ["Senin","Selasa","Rabu","Kamis","Jumat"];
-    const h5 = ["Hari","Jumlah Hadir","Jumlah Izin","Jumlah Sakit","Jumlah Alpha","Total Absensi","% Hadir","% Tdk Hadir","% Izin","% Sakit","% Alpha"];
+    const h5 = ["Hari","Jumlah Hadir","Jumlah Izin","Jumlah Sakit","Jumlah Alpha","Total Absensi","Persentase Hadir (%)","Persentase Tidak Hadir (%)"];
     const dailyStats = statsDays.map(dayName => {
       let h=0,ii=0,s=0,a=0;
       monthDates.forEach(dk => {
@@ -1072,56 +1051,52 @@
       });
       const total=h+ii+s+a;
       const pctH=total?Number((h/total*100).toFixed(2)):0;
-      const pctA_Tot=total?Number(((ii+s+a)/total*100).toFixed(2)):0;
-      const pctI=total?Number((ii/total*100).toFixed(2)):0;
-      const pctS=total?Number((s/total*100).toFixed(2)):0;
-      const pctA=total?Number((a/total*100).toFixed(2)):0;
-      return [dayName,h,ii,s,a,total,pctH,pctA_Tot,pctI,pctS,pctA];
+      const pctA=total?Number(((ii+s+a)/total*100).toFixed(2)):0;
+      return [dayName,h,ii,s,a,total,pctH,pctA];
     });
-    
-    // Rata-rata dari kolom persentase
     const avgH5 = Number((dailyStats.reduce((acc,r)=>acc+r[6],0)/dailyStats.length).toFixed(2));
-    const avgA_Tot5 = Number((dailyStats.reduce((acc,r)=>acc+r[7],0)/dailyStats.length).toFixed(2));
-    const avgI5 = Number((dailyStats.reduce((acc,r)=>acc+r[8],0)/dailyStats.length).toFixed(2));
-    const avgS5 = Number((dailyStats.reduce((acc,r)=>acc+r[9],0)/dailyStats.length).toFixed(2));
-    const avgA5 = Number((dailyStats.reduce((acc,r)=>acc+r[10],0)/dailyStats.length).toFixed(2));
-    
-    const avgRow5 = ["TOTAL RATA-RATA","","","","","",avgH5,avgA_Tot5,avgI5,avgS5,avgA5];
+    const avgA5 = Number((dailyStats.reduce((acc,r)=>acc+r[7],0)/dailyStats.length).toFixed(2));
+    const avgRow5 = ["TOTAL RATA-RATA","","","","","",avgH5,avgA5];
     const ws5 = window.XLSX.utils.aoa_to_sheet([["STATISTIK HARIAN (SENIN–JUMAT)"],["Periode: "+monthName],[],h5,...dailyStats,avgRow5]);
-    ws5["!cols"] = [{wch:16},{wch:14},{wch:14},{wch:14},{wch:14},{wch:16},{wch:12},{wch:14},{wch:12},{wch:12},{wch:12}];
-    ws5["!autofilter"] = { ref:`A4:K${4+dailyStats.length}` };
+    ws5["!cols"] = [{wch:16},{wch:14},{wch:14},{wch:14},{wch:14},{wch:16},{wch:24},{wch:26}];
+    ws5["!autofilter"] = { ref:`A4:H${4+dailyStats.length}` };
     applyStyle(ws5,0,0,S_TITLE);
     styleRow(ws5,3,h5.map(()=>S_HEADER));
     dailyStats.forEach((_,ri) => {
       const ri2=4+ri;
-      [S_DATA_C,S_DATA_C,S_DATA_C,S_DATA_C,S_DATA_C,S_DATA_C,S_PCT,S_PCT,S_PCT,S_PCT,S_PCT].forEach((st,ci)=>{ applyStyle(ws5,ri2,ci,st); if(ci>=6)setPct(ws5,ri2,ci); });
+      [S_DATA_C,S_DATA_C,S_DATA_C,S_DATA_C,S_DATA_C,S_DATA_C,S_PCT,S_PCT].forEach((st,ci)=>{ applyStyle(ws5,ri2,ci,st); if(ci>=6)setPct(ws5,ri2,ci); });
     });
     const avgRowIdx5 = 4+dailyStats.length;
     h5.forEach((_,ci)=>applyStyle(ws5,avgRowIdx5,ci,S_AVG));
-    [6,7,8,9,10].forEach(ci=>setPct(ws5,avgRowIdx5,ci));
+    [6,7].forEach(ci=>setPct(ws5,avgRowIdx5,ci));
     window.XLSX.utils.book_append_sheet(wb, ws5, "5. Statistik Harian");
 
     // ── SHEET 6: ANALISIS POLA & EVALUASI (ENHANCED ALGORITHM) ───
-    const h6a = ["Nama Siswa","Total Absen (Hari)","% Alpha","Hari Puncak Absen","Pola Ketidakhadiran","Identifikasi Peringatan Dini / Saran Wali Kelas"];
+    const h6a = ["Nama Siswa","Jumlah Izin","Jumlah Sakit","Jumlah Alpha","Total Absen","Hari Puncak Absen","Pola Ketidakhadiran","Identifikasi Peringatan Dini / Saran Wali Kelas"];
     
-    // Dapatkan baseline kelas untuk perbandingan Cerdas
-    let sumAlphaPct=0, sumSakitPct=0;
+    // Dapatkan baseline kelas untuk perbandingan cerdas
+    let totalAllAlpha=0, totalAllSakit=0, totalAllIzin=0, countDayLog=0;
     STUDENTS.forEach((_,i) => {
-      let sa=0, ss=0, tot=0;
-      monthDates.forEach(dk=>{ if(attendanceByDate[dk]&&attendanceByDate[dk][i]){ tot++; const v=attendanceByDate[dk][i]; if(v==="A")sa++; if(v==="S")ss++; }});
-      sumAlphaPct += tot ? (sa/tot*100) : 0;
-      sumSakitPct += tot ? (ss/tot*100) : 0;
+      monthDates.forEach(dk=>{ 
+        if(attendanceByDate[dk]&&attendanceByDate[dk][i]){ 
+          countDayLog++; 
+          const v=attendanceByDate[dk][i]; 
+          if(v==="A") totalAllAlpha++; 
+          if(v==="S") totalAllSakit++; 
+          if(v==="I") totalAllIzin++;
+        }
+      });
     });
-    const classAvgAlpha = sumAlphaPct / STUDENTS.length;
-    const classAvgSakit = sumSakitPct / STUDENTS.length;
+    // Menghitung rata-rata insiden per siswa
+    const classAvgAlpha = totalAllAlpha / STUDENTS.length;
+    const classAvgSakit = totalAllSakit / STUDENTS.length;
 
     const rows6 = STUDENTS.map((name,i) => {
-      let totalAbsen=0, a=0, s=0, ii=0, totalDay=0; 
+      let totalAbsen=0, a=0, s=0, ii=0; 
       const dc={"Senin":0,"Selasa":0,"Rabu":0,"Kamis":0,"Jumat":0};
       
       monthDates.forEach(dk=>{ 
         if(attendanceByDate[dk]&&attendanceByDate[dk][i]){
-          totalDay++;
           const v = attendanceByDate[dk][i];
           if(v!=="H"){
             totalAbsen++;
@@ -1134,35 +1109,34 @@
         } 
       });
       
-      const pctA = totalDay ? Number((a/totalDay*100).toFixed(2)) : 0;
       const topDay = Object.keys(dc).reduce((max,curr) => dc[curr] > dc[max] ? curr : max);
       
       let pattern="Teratur";
-      let indication="Kondisi kehadiran stabil dan kooperatif. Pertahankan.";
+      let indication="✅ Kondisi kehadiran stabil. Siswa kooperatif, pertahankan kedisiplinan.";
 
       if(totalAbsen>0){
-        // Logic Early Warning System (EWS)
-        if (a >= 3 || pctA > (classAvgAlpha + 10)) {
-           pattern = "Alpha Melebihi Batas";
-           indication = "🚨 PERINGATAN DINI: Terdeteksi frekuensi bolos tinggi (Di atas rata-rata kelas). Sangat disarankan pemanggilan SP/Wali Murid segera untuk investigasi.";
-        } else if (s > 4 || (s/totalDay*100) > (classAvgSakit + 15)) {
-           pattern = "Kerentanan Kesehatan (Sakit)";
-           indication = "Pemantauan Khusus: Frekuensi sakit tinggi. Disarankan komunikasi persuasif dengan orang tua mengenai kondisi fisik dan gizi anak.";
+        // Logic Early Warning System (EWS) mendalam
+        if (a > classAvgAlpha && a >= 2) {
+           pattern = "Alpha Melebihi Batas Rata-rata";
+           indication = "🚨 PERINGATAN DINI: Terdeteksi tingkat bolos/alpha yang mencurigakan melebihi rata-rata kelas. Disarankan pemanggilan personal atau SP 1 kepada wali murid untuk pencegahan.";
+        } else if (s > classAvgSakit && s >= 3) {
+           pattern = "Kerentanan Fisik (Sering Sakit)";
+           indication = "🏥 Pemantauan Khusus: Siswa ini terlalu sering absen karena sakit. Dianjurkan berkomunikasi suportif dengan orang tua mengenai nutrisi dan kondisi medis anak.";
         } else if (dc[topDay] >= 2 && topDay==="Senin") {
            pattern = "Post-Weekend Syndrome (Senin)";
-           indication = "Indikasi kesulitan transisi ke rutinitas sekolah usai libur. Pendekatan motivasi dan kedisiplinan pagi diperlukan.";
+           indication = "📅 Siswa menunjukkan pola kesulitan kembali bersekolah setelah hari libur. Perlu diberikan motivasi dan pengawasan khusus di awal pekan.";
         } else if (dc[topDay] >= 2 && topDay==="Jumat") {
            pattern = "Pre-Weekend Syndrome (Jumat)";
-           indication = "Kecenderungan pulang dini atau bolos jelang akhir pekan. Wali kelas & guru piket disarankan mengawasi presensi akhir di hari Jumat.";
-        } else if (ii > 2) {
-           pattern = "Sering Izin";
-           indication = "Tingkat izin di luar kewajaran. Perlu evaluasi kembali validitas surat izin yang diberikan.";
+           indication = "📅 Kecenderungan membolos menjelang akhir pekan sangat tinggi. Wali kelas disarankan berkoordinasi dengan guru piket Jumat siang untuk razia/absen tambahan.";
+        } else if (ii >= 3) {
+           pattern = "Izin di Luar Kewajaran";
+           indication = "⚠️ Terlalu banyak alasan izin. Konfirmasi ulang setiap surat izin ke pihak orang tua agar tidak dimanipulasi oleh siswa.";
         } else {
            pattern = "Ketidakhadiran Sporadis";
-           indication = "Masih dalam batas wajar karena keperluan insidental atau kesehatan. Terus dipantau secara berkala.";
+           indication = "Absen masih dalam batas logis/insidental. Cukup pantau perkembangan absensi bulan depan.";
         }
       }
-      return [name,totalAbsen,pctA,topDay,pattern,indication];
+      return [name,ii,s,a,totalAbsen,topDay,pattern,indication];
     });
 
     const h6b = ["Fokus Hari Kerja","Identifikasi Indikasi Kolektif","Rekomendasi Tindakan Kelas"];
@@ -1175,10 +1149,10 @@
       });
       
       let indikasi="", rek="";
-      if(day==="Senin") { indikasi=`${badHabitCount} Siswa teridentifikasi sering absen Senin. Masalah transisi pasca libur.`; rek="Adakan sesi motivasi/briefing khusus di Senin pagi."; }
-      else if(day==="Jumat") { indikasi=`${badHabitCount} Siswa teridentifikasi bolos Jumat. Hasrat libur awal.`; rek="Razia presensi di jam terakhir. Evaluasi jadwal ekskul Jumat."; }
-      else if(day==="Rabu") { indikasi=`Akumulasi kelelahan mid-week (${badHabitCount} siswa berisiko).`; rek="Pastikan beban PR tidak menumpuk berlebihan di hari Selasa/Rabu."; }
-      else { indikasi="Normal"; rek="-"; }
+      if(day==="Senin") { indikasi=`Terdapat ${badHabitCount} siswa dengan pola bolos Senin (Transisi pasca libur).`; rek="Jadwalkan sidak di gerbang khusus Senin pagi atau adakan briefing wali kelas."; }
+      else if(day==="Jumat") { indikasi=`Terdapat ${badHabitCount} siswa terindikasi memotong jam Jumat.`; rek="Berlakukan validasi presensi ganda di jam pelajaran terakhir hari Jumat."; }
+      else if(day==="Rabu") { indikasi=`Kejenuhan pertengahan minggu (Terdeteksi ${badHabitCount} siswa berisiko).`; rek="Pastikan jadwal pada hari ini tidak monoton, koordinasi dengan guru mapel."; }
+      else { indikasi="Kondisi presensi kelas berjalan wajar."; rek="-"; }
 
       return ["Evaluasi Hari "+day, indikasi, rek];
     });
@@ -1191,17 +1165,16 @@
       ["ANALISIS RISIKO KOLEKTIF BERDASARKAN HARI"],
       h6b,...focusRows
     ]);
-    ws6["!cols"] = [{wch:30},{wch:18},{wch:14},{wch:18},{wch:30},{wch:75}];
-    ws6["!autofilter"] = { ref:`A4:F${4+rows6.length}` };
+    ws6["!cols"] = [{wch:30},{wch:14},{wch:14},{wch:14},{wch:14},{wch:18},{wch:30},{wch:80}];
+    ws6["!autofilter"] = { ref:`A4:H${4+rows6.length}` };
     applyStyle(ws6,0,0,S_TITLE);
     styleRow(ws6,3,h6a.map(()=>S_HEADER));
     rows6.forEach((row,ri) => {
       const ri2=4+ri;
-      [S_DATA,S_DATA_C,S_PCT,S_DATA_C,S_DATA,S_DATA].forEach((st,ci)=>applyStyle(ws6,ri2,ci,st));
-      setPct(ws6,ri2,2);
-      if(row[2] >= 15 || row[4].includes("Melebihi Batas")) {
-         applyStyle(ws6,ri2,4,S_RED);
-         applyStyle(ws6,ri2,5,S_RED_TXT);
+      [S_DATA,S_DATA_C,S_DATA_C,S_DATA_C,S_DATA_C,S_DATA_C,S_DATA,S_DATA].forEach((st,ci)=>applyStyle(ws6,ri2,ci,st));
+      if(row[6].includes("Melebihi Batas")) {
+         applyStyle(ws6,ri2,6,S_RED);
+         applyStyle(ws6,ri2,7,S_RED_TXT);
       }
     });
     applyStyle(ws6,focusTitleIdx,0,S_TITLE);
